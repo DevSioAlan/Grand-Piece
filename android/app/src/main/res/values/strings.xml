@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Grand Piece</string>
+    <string name="title_activity_main">Grand Piece</string>
+    <string name="package_name">com.alanm.grandpiece</string>
+    <string name="custom_url_scheme">com.alanm.grandpiece</string>
+</resources>
