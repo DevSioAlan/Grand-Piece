@@ -94,8 +94,25 @@ export function useCombatEngine(player, battle, setCombatState, dragonBalls, set
     }
 
     // Calcul Dégâts
-    let dmg = getDmg() * card.mult;
+
+    let dmg = getDmg() * card.mult * (1 + (combatState.comboCount * 0.1));
+
+
     let stun = card.id === "special" ? 2 : 0;
+
+    // Contre Card Logic
+    if (card.id === "counter") {
+        if (combatState.enemyAttacking) {
+            spawnText("CONTRE PARFAIT! ", 0, true, "#38bdf8");
+            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: 2, enemyAttacking: false }));
+            return { finalDmg: 0, stun: 2 };
+        } else {
+            spawnText("RATÉ... ", 0, false, "#9ca3af");
+            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), comboCount: 0 }));
+            return { finalDmg: 0, stun: 0 };
+        }
+    }
+
 
     if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), card.id==="special"?300:150); }
     if(card.id==="strike") { setHitstop(true); setTimeout(() => setHitstop(false), 80); }
@@ -104,7 +121,13 @@ export function useCombatEngine(player, battle, setCombatState, dragonBalls, set
     let finalDmg = Math.floor(isCrit ? dmg * 2 : dmg);
 
     setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: stun > 0 ? stun : prev.stunTime }));
+
     spawnText(card.icon + " ", finalDmg, isCrit, card.id==="special"?"#3b82f6":card.id==="blast"?"#eab308":"#fff");
+
+    if(card.id === "strike" || card.id === "blast") {
+        setCombatState(prev => ({ ...prev, comboCount: prev.comboCount + 1 }));
+    }
+
 
     // L'application des dégats est asynchrone pour l'effet visuel
     return { finalDmg, stun }; // Returns damage to be processed by the main loop

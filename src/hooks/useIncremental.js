@@ -60,5 +60,22 @@ export function useIncremental(player, setPlayer, setBattle, setAutoClick, setLe
     else addToast("Fonds insuffisants.", "#ef4444");
   };
 
-  return { handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip };
+
+  const fusePets = (itemId, stars) => {
+    playClick();
+    if (stars >= 5) return addToast("Ce familier est déjà au niveau maximum (5⭐) !", "#ef4444");
+
+    const matchingPets = player.pets.inventory.filter(p => p.itemId === itemId && (p.stars || 1) === stars && !player.pets.active.includes(p.instanceId));
+    if (matchingPets.length < 5) return addToast("Il faut 5 familiers identiques (non équipés) !", "#ef4444");
+
+    const toRemove = matchingPets.slice(0, 5).map(p => p.instanceId);
+    setPlayer(p => {
+      const newInv = p.pets.inventory.filter(pi => !toRemove.includes(pi.instanceId));
+      newInv.push({ instanceId: Date.now() + Math.random().toString(), itemId: itemId, stars: stars + 1 });
+      return { ...p, pets: { ...p.pets, inventory: newInv } };
+    });
+    addToast(`Fusion Réussie ! Familier ⭐${stars + 1} créé !`, "#22c55e");
+  };
+
+  return { fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip };
 }

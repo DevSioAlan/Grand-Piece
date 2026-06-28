@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Format, RARITY, getGrade, getTitle, REBIRTH_SHOP, SAVE_KEY } from '../data/constants';
+import { Format, RARITY, getGrade, getTitle, REBIRTH_SHOP, SAVE_KEY, ELEMENTS } from '../data/constants';
 import { ITEMS_DB, SHIPS, RELICS } from '../data/items';
 import { PETS_DB } from '../data/pets';
-import { CREW_MEMBERS, BGM_TRACKS } from '../data/combat';
+import { SEAS, CREW_MEMBERS, BGM_TRACKS } from '../data/combat';
 
 export function CombatView({
-    mainTab, player, battle, setBattle, combatState, dps, getDmg, getDmgMult, activeSyns, gameMode, setGameMode, playClick, dragonBalls, hitstop, shake, showUltAnim, combatDeck, setCombatDeck, executeCard, executeVanish, executeRisingRush, raidWave, raidActive, floatingTexts, autoClick, setAutoClick, getGrade, ELEMENTS, Format
+    mainTab, player, battle, setBattle, combatState, dps, getDmg, getDmgMult, activeSyns, gameMode, setGameMode, playClick, dragonBalls, hitstop, shake, showUltAnim, combatDeck, setCombatDeck, executeCard, executeVanish, executeRisingRush, raidWave, raidActive, floatingTexts, autoClick, setAutoClick, changeSea, getGrade, ELEMENTS, Format
 }) {
     if (mainTab !== "combat") return null;
     return (
@@ -63,6 +63,12 @@ export function CombatView({
                       {floatingTexts.map(t => (<span key={t.id} className="dmg-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
 
                       {/* DBL Elements */}
+                      {combatState.comboCount > 1 && (
+                          <div style={{ position: "absolute", top: "10px", left: "10px", fontSize: "20px", fontWeight: "900", color: "#eab308", filter: "drop-shadow(0 0 10px #eab308)", animation: "fadeIn 0.2s" }}>
+                              {combatState.comboCount} COMBO
+                          </div>
+                      )}
+
                       {combatState.isInvincible && <div style={{position:"absolute", inset:0, border:"4px solid #fff", borderRadius:"16px", opacity:0.8}}></div>}
                       {combatState.enemyAttacking && <div className="enemy-attack-warn">!</div>}
                       <div className="vanish-gauge"><div className={`vanish-fill ${combatState.vanishing >= 100 ? 'vanish-ready' : ''}`} style={{ height: `${combatState.vanishing}%` }}></div></div>
@@ -82,7 +88,7 @@ export function CombatView({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
                         <div style={{ display: "flex", gap: "8px", flex: 1, height: "90px" }}>
                           {combatDeck.map((card, i) => (
-                            <div key={card.uid} className="dbl-card ios-tap" onClick={() => executeCard(card, i)} style={{ background: card.bg, opacity: combatState.energy < card.cost ? 0.4 : 1 }}>
+                            <div key={card.uid} className="dbl-card ios-tap" onClick={() => executeCard(card, i, combatState)} style={{ background: card.bg, opacity: combatState.energy < card.cost ? 0.4 : 1 }}>
                               <span className="dbl-card-cost">{card.cost}</span>
                               {card.hasDB && <span className="dbl-card-db">⭐</span>}
                               <span className="dbl-card-icon">{card.icon}</span>

@@ -224,7 +224,7 @@ export default function App() {
   const [battle, setBattle] = useState(null);
   
   // Combat Action States (DBL V23)
-  const [combatState, setCombatState] = useState({ energy: 100, ultimate: 0, vanishing: 100, isInvincible: false, enemyAttacking: false });
+  const [combatState, setCombatState] = useState({ energy: 100, ultimate: 0, vanishing: 100, isInvincible: false, enemyAttacking: false, comboCount: 0 });
   const [combatDeck, setCombatDeck] = useState([]);
   const [dragonBalls, setDragonBalls] = useState(0);
 
@@ -263,6 +263,22 @@ export default function App() {
   };
 
   // --- CINÉMATIQUE D'INTRO V23 ---
+
+  useEffect(() => {
+    if (battle && dragonBalls === 0) {
+       // Check for 5* pet equipped
+       const has5StarPet = player.pets.active.some(pInst => {
+           if(!pInst) return false;
+           const petItem = player.pets.inventory.find(i=>i.instanceId===pInst);
+           return petItem && (petItem.stars || 1) >= 5;
+       });
+       if (has5StarPet) {
+           setDragonBalls(1);
+           addToast("Bonus Divin: +1 Dragon Ball", "#f472b6");
+       }
+    }
+  }, [battle]);
+
   useEffect(() => {
     setTimeout(() => setIntroText("ÉVEIL DES FRUITS DU DÉMON..."), 1000);
     setTimeout(() => setIntroText("PRÉPARATION AU COMBAT..."), 2000);
@@ -485,19 +501,6 @@ export default function App() {
     }
   };
 
-  const fusePets = (itemId, stars) => {
-    playClick();
-    const matchingPets = player.pets.inventory.filter(p => p.itemId === itemId && (p.stars || 1) === stars && !player.pets.active.includes(p.instanceId));
-    if (matchingPets.length < 5) return addToast("Il faut 5 familiers identiques (non équipés) !", "#ef4444");
-    
-    const toRemove = matchingPets.slice(0, 5).map(p => p.instanceId);
-    setPlayer(p => {
-      const newInv = p.pets.inventory.filter(pi => !toRemove.includes(pi.instanceId));
-      newInv.push({ instanceId: Date.now() + Math.random().toString(), itemId: itemId, stars: stars + 1 });
-      return { ...p, pets: { ...p.pets, inventory: newInv } };
-    });
-    addToast(`Fusion Réussie ! Familier ⭐${stars + 1} créé !`, "#22c55e");
-  };
 
   const trainStat = (statName) => {
     playClick(); const cost = 100 * Math.pow(1.5, player.stats[statName] || 0);
@@ -749,6 +752,7 @@ export default function App() {
             if (curr.enemyAttacking && !curr.isInvincible) { // S'il n'a pas esquivé
               const bossDmg = Math.floor(player.playerHp.max * 0.10); 
               setPlayer(p => ({...p, playerHp: {...p.playerHp, current: Math.max(0, p.playerHp.current - bossDmg)}}));
+              setCombatState(prev => ({ ...prev, comboCount: 0 })); // Reset combo on damage
               if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), 200); }
               spawnText("DÉGÂTS REÇUS ", bossDmg, false, "#ef4444");
             }
@@ -927,7 +931,16 @@ export default function App() {
           @keyframes flashCine { 0%, 10% { opacity: 1; } 100% { opacity: 0; } }
           @keyframes popItem { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
           @keyframes slideUp { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-        `}</style>
+
+        /* V24 PET AURAS */
+        .pet-aura-2 { box-shadow: 0 0 10px rgba(34,197,94,0.5); animation: petPulse 2s infinite; }
+        .pet-aura-3 { box-shadow: 0 0 15px rgba(59,130,246,0.8), inset 0 0 5px rgba(59,130,246,0.5); border: 1px solid #3b82f6 !important; }
+        .pet-aura-4 { box-shadow: 0 0 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(239,68,68,0.5); border: 2px solid #000 !important; animation: hakiPulse 1.5s infinite alternate; }
+        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
+
+        @keyframes petPulse { 0%, 100% { box-shadow: 0 0 5px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 15px rgba(34,197,94,0.7); } }
+        @keyframes hakiPulse { 0% { box-shadow: 0 0 10px rgba(0,0,0,0.9); } 100% { box-shadow: 0 0 25px rgba(239,68,68,0.8); } }
+      `}</style>
         <div className="cine-bg"></div><div className="cine-flash"></div>
         <div className="cine-item">{item.img}</div><div className="cine-text">{item.name.toUpperCase()}</div>
       </div>
@@ -1071,8 +1084,8 @@ export default function App() {
         <CombatView
             mainTab={mainTab} player={player} battle={battle} setBattle={setBattle} combatState={combatState} dps={dps} getDmg={getDmg} getDmgMult={getDmgMult} activeSyns={activeSyns}
             gameMode={gameMode} setGameMode={setGameMode} playClick={playClick} dragonBalls={dragonBalls} hitstop={hitstop} shake={shake} showUltAnim={showUltAnim}
-            combatDeck={combatDeck} setCombatDeck={setCombatDeck} executeCard={executeCard} executeVanish={typeof executeVanish !== 'undefined' ? executeVanish : () => {}} executeRisingRush={typeof executeRisingRush !== 'undefined' ? executeRisingRush : () => {}}
-            raidWave={raidWave} raidActive={raidActive} floatingTexts={floatingTexts} autoClick={autoClick} setAutoClick={setAutoClick}
+            combatDeck={combatDeck} setCombatDeck={setCombatDeck} executeCard={executeCard} executeVanish={executeVanish} executeRisingRush={executeRisingRush}
+            raidWave={raidWave} raidActive={raidActive} floatingTexts={floatingTexts} autoClick={autoClick} setAutoClick={setAutoClick} changeSea={changeSea}
         />
         <TrainView
             mainTab={mainTab} player={player} playClick={playClick} trainTab={trainTab} setTrainTab={setTrainTab}
@@ -1084,14 +1097,14 @@ export default function App() {
         />
         <RosterView
             mainTab={mainTab} player={player} playClick={playClick} rosterTab={rosterTab} setRosterTab={setRosterTab}
-            crewSelectSlot={crewSelectSlot} setCrewSelectSlot={setCrewSelectSlot} setPlayer={setPlayer} fusePets={typeof fusePets !== 'undefined' ? fusePets : () => {}} petSelectSlot={petSelectSlot} setPetSelectSlot={setPetSelectSlot}
+            crewSelectSlot={crewSelectSlot} setCrewSelectSlot={setCrewSelectSlot} setPlayer={setPlayer} fusePets={fusePets} petSelectSlot={petSelectSlot} setPetSelectSlot={setPetSelectSlot}
         />
         <InventoryView
-            mainTab={mainTab} player={player} playClick={playClick} sellCommons={typeof sellCommons !== 'undefined' ? sellCommons : () => {}} setPlayer={setPlayer} getEquipped={getEquipped} awakenItem={typeof awakenItem !== 'undefined' ? awakenItem : () => {}}
+            mainTab={mainTab} player={player} playClick={playClick} sellCommons={sellCommons} setPlayer={setPlayer} getEquipped={getEquipped} awakenItem={awakenItem} autoEquip={autoEquip}
         />
         <HubView
             mainTab={mainTab} player={player} playClick={playClick} hubTab={hubTab} setHubTab={setHubTab}
-            claimDaily={typeof claimDaily !== 'undefined' ? claimDaily : () => {}} enterRaid={typeof enterRaid !== 'undefined' ? enterRaid : () => {}} changeSea={typeof changeSea !== 'undefined' ? changeSea : () => {}} marketPrices={marketPrices}
+            claimDaily={claimDaily} enterRaid={enterRaid} changeSea={changeSea} marketPrices={marketPrices}
             autoSummonConfig={autoSummonConfig} setAutoSummonConfig={setAutoSummonConfig} setPlayer={setPlayer} buyShip={buyShip} legalMacro={legalMacro} setLegalMacro={setLegalMacro}
         />
       </div>
