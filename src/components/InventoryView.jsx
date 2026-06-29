@@ -4,7 +4,7 @@ import { Format, RARITY } from '../data/constants';
 import { ITEMS_DB } from '../data/items';
 
 export function InventoryView({
-    mainTab, player, playClick, sellCommons, setPlayer, getEquipped, awakenItem, autoEquip
+    mainTab, player, playClick, sellCommons, setPlayer, getEquipped, awakenItem, autoEquip, forgeItem
 }) {
     if (mainTab !== "inventory") return null;
 

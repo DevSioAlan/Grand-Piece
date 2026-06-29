@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Format, getGrade } from '../data/constants';
+import { Format, getGrade, TITLES_BUFFS } from '../data/constants';
 
 export function ProfileModal({
     showProfile, setShowProfile, player, profileTab, setProfileTab, setPlayer, getDmg
@@ -54,7 +54,9 @@ export function ProfileModal({
                   <div>
                     <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Titre Actif</span>
                     <select value={player.profile.titleEquipped} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, titleEquipped: e.target.value}}))} style={{ width: "100%", background: "#09090b", color: "#fff", border: "1px solid #27272a", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
-                      {player.profile.titles.map(t => <option key={t} value={t}>{t}</option>)}
+
+                      {player.profile.titles.map(t => <option key={t} value={t}>{t} - {TITLES_BUFFS[t]?.desc || "Buff"}</option>)}
+
                     </select>
                   </div>
                   <div>

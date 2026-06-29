@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { RELICS, ITEMS_DB } from "../data/items";
 import { PETS_DB } from "../data/pets";
-import { REBIRTH_SHOP, getElementAdvantage } from "../data/constants";
+import { REBIRTH_SHOP, getElementAdvantage, TITLES_BUFFS } from "../data/constants";
 import { CREW_MEMBERS, SYNERGIES } from "../data/combat";
 
 export function useCombatEngine(player, battle, setBattle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText, handleVictory) {
@@ -73,6 +73,16 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
       const capElem = captainId ? CREW_MEMBERS.find(m=>m.id===captainId)?.elem : "STR";
       mult *= getElementAdvantage(capElem, battle.elem);
     }
+
+    let titleMult = 1.0;
+    const activeTitle = player.profile.titleEquipped;
+    if (activeTitle === "Pirate") titleMult = 1.05;
+    else if (activeTitle === "Supernova") titleMult = 1.10;
+    else if (activeTitle === "Grand Corsaire") titleMult = 1.15;
+    else if (activeTitle === "Empereur") titleMult = 1.25;
+    else if (activeTitle === "Roi des Pirates") titleMult = 1.50;
+
+    mult *= titleMult;
     return mult;
   };
 

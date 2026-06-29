@@ -89,3 +89,12 @@ export const DEFAULT_PLAYER = {
   settings: { sound: true, music: false, fastMode: false, hideDmg: false, shake: true, skipLowAnim: true, bgmTrack: 0, bgmVolume: 0.4, autoSellRarities: { Common: false, Uncommon: false, Rare: false, Epic: false } },
   redeemedCodes: []
 };
+
+export const TITLES_BUFFS = {
+  "Mousse": { desc: "Aucun buff" },
+  "Pirate": { desc: "+5% Dégâts" },
+  "Supernova": { desc: "+10% Dégâts, +5% Vitesse" },
+  "Grand Corsaire": { desc: "+15% Dégâts, +10% Beli" },
+  "Empereur": { desc: "+25% Dégâts, +15% PV Max" },
+  "Roi des Pirates": { desc: "+50% Dégâts, +20% All Stats" }
+};

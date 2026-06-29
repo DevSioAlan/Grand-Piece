@@ -31,6 +31,7 @@ export default function App() {
   
   const [player, setPlayer] = useState(DEFAULT_PLAYER);
   const [battle, setBattle] = useState(null);
+  const [activeBounty, setActiveBounty] = useState(null);
   
   // Combat Action States (DBL V23)
   const [combatState, setCombatState] = useState({ energy: 100, ultimate: 0, vanishing: 100, isInvincible: false, enemyAttacking: false, comboCount: 0 });
@@ -52,6 +53,7 @@ export default function App() {
   const [banner, setBanner] = useState("Fruit");
   const [showDailyModal, setShowDailyModal] = useState(false);
   const [dailyRewardAmount, setDailyRewardAmount] = useState({ gems: 0, beli: 0 });
+
 
   // Modals & Sub-states
   const [showProfile, setShowProfile] = useState(false);
@@ -471,7 +473,11 @@ export default function App() {
     
     setDragonBalls(0); setCombatDeck([]); // Reset deck
     
-    if (gameMode === "tower") {
+    if (battle.name === activeBounty?.name) {
+      setActiveBounty(null);
+      setBattle(null); setAutoClick(false);
+      addToast("👑 PRIME RÉCOLTÉE !", "#eab308");
+    } else if (gameMode === "tower") {
       setPlayer(p => ({...p, towerFloor: p.towerFloor + 1, profile: {...p.profile, highestFloor: Math.max(p.profile.highestFloor, p.towerFloor)}}));
       setBattle(null); setAutoClick(false);
     } else if (gameMode === "pvp") {
@@ -503,7 +509,59 @@ export default function App() {
 
   const { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
   const { performSummon, handleAutoSell } = useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast);
-  const { fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
+  const { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
+
+
+  // Bounty System
+  useEffect(() => {
+    const bountyInterval = setInterval(() => {
+      if (!activeBounty && Math.random() < 0.2) { // 20% chance every minute to spawn a bounty
+        const bountyBosses = [
+          { name: "Katakuri", emoji: "🍩", elem: "STR", hpMult: 100, drops: [{id: "f_mera", chance: 0.1}] },
+          { name: "King", emoji: "🦅", elem: "PHY", hpMult: 150, drops: [{id: "w_shusui", chance: 0.1}] },
+          { name: "Big Mom", emoji: "🍰", elem: "INT", hpMult: 300, drops: [{id: "r_poneglyph", chance: 0.05}] }
+        ];
+        const boss = bountyBosses[Math.floor(Math.random() * bountyBosses.length)];
+        const hp = player.power * boss.hpMult;
+        setActiveBounty({
+          ...boss, hp, maxHp: hp, beli: 50000 * player.level.current, xp: 20000 * player.level.current,
+          gems: 100, isBoss: true, expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes to fight
+        });
+        addToast("🚨 AVIS DE RECHERCHE: " + boss.name + " est apparu !", "#ef4444");
+      }
+    }, 60000);
+    return () => clearInterval(bountyInterval);
+  }, [activeBounty, player.power, player.level.current]);
+
+  useEffect(() => {
+    if (activeBounty && Date.now() > activeBounty.expiresAt) {
+       setActiveBounty(null);
+       addToast("La prime a expiré...", "#9ca3af");
+    }
+  }, [activeBounty, mainTab]);
+
+
+  useEffect(() => {
+    if (player.expeditions) {
+      let rewards = { beli: 0, gems: 0, count: 0 };
+      let updatedExp = [...player.expeditions];
+      const now = Date.now();
+
+      updatedExp.forEach((exp, i) => {
+        if (exp && now >= exp.endTime) {
+           rewards.count++;
+           rewards.beli += exp.rewards.beli;
+           rewards.gems += exp.rewards.gems;
+           updatedExp[i] = null;
+        }
+      });
+
+      if (rewards.count > 0) {
+        setPlayer(p => ({ ...p, beli: p.beli + rewards.beli, gems: p.gems + rewards.gems, expeditions: updatedExp }));
+        addToast(`${rewards.count} Expéditions terminées ! +${Format.num(rewards.beli)} ฿, +${rewards.gems} 💎`, "#22c55e");
+      }
+    }
+  }, [player.expeditions]);
 
   // --- RENDER CINEMATICS & LOADING ---
   if (cinematicSummon.active && cinematicSummon.item) {
@@ -712,13 +770,13 @@ export default function App() {
             crewSelectSlot={crewSelectSlot} setCrewSelectSlot={setCrewSelectSlot} setPlayer={setPlayer} fusePets={fusePets} petSelectSlot={petSelectSlot} setPetSelectSlot={setPetSelectSlot}
         />
         <InventoryView
-            mainTab={mainTab} player={player} playClick={playClick} sellCommons={sellCommons} setPlayer={setPlayer} getEquipped={getEquipped} awakenItem={awakenItem} autoEquip={autoEquip}
+            mainTab={mainTab} player={player} playClick={playClick} sellCommons={sellCommons} setPlayer={setPlayer} getEquipped={getEquipped} awakenItem={awakenItem} autoEquip={autoEquip} forgeItem={forgeItem}
         />
         <HubView
             mainTab={mainTab} player={player} playClick={playClick} hubTab={hubTab} setHubTab={setHubTab}
             claimDaily={claimDaily} enterRaid={enterRaid} changeSea={changeSea} marketPrices={marketPrices}
             autoSummonConfig={autoSummonConfig} setAutoSummonConfig={setAutoSummonConfig} setPlayer={setPlayer} buyShip={buyShip} legalMacro={legalMacro} setLegalMacro={setLegalMacro}
-            startRaid={startRaid} tradeMarketFruit={tradeMarketFruit} redeemCode={redeemCode} promoCode={promoCode} setPromoCode={setPromoCode}
+            startRaid={startRaid} tradeMarketFruit={tradeMarketFruit} redeemCode={redeemCode} promoCode={promoCode} setPromoCode={setPromoCode} activeBounty={activeBounty} setBattle={setBattle} setGameMode={setGameMode} setMainTab={setMainTab}
         />
       </div>
 

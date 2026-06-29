@@ -28,9 +28,16 @@ export const ITEMS_DB = {
 export const SHIPS = {
   "sh_barque": { name: "Chaloupe", img: "🛶", cost: 0, clickDelay: 350, extraBeli: 1 },
   "sh_merry": { name: "Vogue Merry", img: "🐑", cost: 100000, clickDelay: 250, extraBeli: 1.5 },
-  "sh_sunny": { name: "Thousand Sunny", img: "🦁", cost: 2000000, clickDelay: 120, extraBeli: 3.0 }
+  "sh_sunny": { name: "Thousand Sunny", img: "🦁", cost: 2000000, clickDelay: 120, extraBeli: 3.0 },
+  "sh_mobydick": { name: "Moby Dick", img: "🐋", cost: 5000000, clickDelay: 100, extraBeli: 4.0, desc: "+30% PV Max" },
+  "sh_redforce": { name: "Red Force", img: "🐉", cost: 10000000, clickDelay: 80, extraBeli: 5.0, desc: "+15% Chance de Crit" },
+  "sh_orojackson": { name: "Oro Jackson", img: "🔱", cost: 50000000, clickDelay: 50, extraBeli: 8.0, desc: "+50% Beli et Découvertes" },
+  "sh_polartang": { name: "Polar Tang", img: "🟡", cost: 25000000, clickDelay: 70, extraBeli: 6.0, desc: "Soin sur Esquive Parfaite" }
 };
 
 export const RELICS = {
-  "r_cursed": { id: "r_cursed", name: "Kitetsu Maudit", img: "👺", cost: 500000, mult: 4.0, desc: "Dégâts x4 (Pas d'esquive)" }
+  "r_cursed": { id: "r_cursed", name: "Kitetsu Maudit", img: "👺", cost: 500000, mult: 4.0, desc: "Dégâts x4 (Pas d'esquive)" },
+  "r_strawhat": { id: "r_strawhat", name: "Chapeau de Paille usé", img: "👒", cost: 1000000, mult: 0.5, desc: "Chance d'EX x2 mais Dégâts divisés par 2" },
+  "r_poneglyph": { id: "r_poneglyph", name: "Road Poneglyph", img: "🪨", cost: 2500000, mult: 1.0, desc: "Débloque des étages secrets dans la Tour" },
+  "r_impactdial": { id: "r_impactdial", name: "Dial d'Impact", img: "🐚", cost: 5000000, mult: 1.2, desc: "Stocke une partie des dégâts reçus pour booster l'ultime" }
 };
