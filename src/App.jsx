@@ -1,4 +1,14 @@
 
+import React, { useState, useEffect, useRef, useMemo } from "react";
+import { RARITY, ELEMENTS, getElementAdvantage, REBIRTH_SHOP, Format, getGrade, getTitle, SAVE_KEY, DEFAULT_PLAYER } from './data/constants';
+import { ITEMS_DB, SHIPS, RELICS } from './data/items';
+import { PETS_DB } from './data/pets';
+import { SEAS, CREW_MEMBERS, SYNERGIES, DBL_CARDS, BGM_TRACKS } from './data/combat';
+
+import { useCombatEngine } from './hooks/useCombatEngine';
+import { useGacha } from './hooks/useGacha';
+import { useIncremental } from './hooks/useIncremental';
+
 import { CombatView } from './components/CombatView';
 import { TrainView } from './components/TrainView';
 import { SummonView } from './components/SummonView';
@@ -7,207 +17,6 @@ import { InventoryView } from './components/InventoryView';
 import { HubView } from './components/HubView';
 import { ProfileModal } from './components/ProfileModal';
 
-import React, { useState, useEffect, useRef, useMemo } from "react";
-
-// ==========================================
-// CONFIGURATION & DONNÉES DU JEU (V23 ULTIME)
-// ==========================================
-
-const RARITY = {
-  Common: { name: "Commun", color: "#9ca3af", val: 1 },
-  Uncommon: { name: "Peu Commun", color: "#22c55e", val: 2 },
-  Rare: { name: "Rare", color: "#3b82f6", val: 3 },
-  Epic: { name: "Épique", color: "#a855f7", val: 4 },
-  Legendary: { name: "Légendaire", color: "#eab308", val: 5 },
-  Mythic: { name: "Mythique", color: "#ef4444", val: 6 },
-  Divine: { name: "Divin", color: "#06b6d4", val: 7 },
-  EX: { name: "EX Extrême", color: "#f472b6", val: 8 }
-};
-
-const ELEMENTS = {
-  STR: { name: "STR", color: "#ef4444", icon: "🔴" },
-  AGI: { name: "AGI", color: "#3b82f6", icon: "🔵" },
-  TEQ: { name: "TEQ", color: "#22c55e", icon: "🟢" },
-  INT: { name: "INT", color: "#a855f7", icon: "🟣" },
-  PHY: { name: "PHY", color: "#eab308", icon: "🟡" }
-};
-
-const getElementAdvantage = (atkElem, defElem) => {
-  if (!atkElem || !defElem) return 1.0;
-  if (atkElem === 'STR' && defElem === 'PHY') return 1.2;
-  if (atkElem === 'PHY' && defElem === 'INT') return 1.2;
-  if (atkElem === 'INT' && defElem === 'TEQ') return 1.2;
-  if (atkElem === 'TEQ' && defElem === 'AGI') return 1.2;
-  if (atkElem === 'AGI' && defElem === 'STR') return 1.2;
-  if (atkElem === 'PHY' && defElem === 'STR') return 0.8;
-  if (atkElem === 'INT' && defElem === 'PHY') return 0.8;
-  if (atkElem === 'TEQ' && defElem === 'INT') return 0.8;
-  if (atkElem === 'AGI' && defElem === 'TEQ') return 0.8;
-  if (atkElem === 'STR' && defElem === 'AGI') return 0.8;
-  return 1.0;
-};
-
-const ITEMS_DB = {
-  "f_sube": { id: "f_sube", name: "Sube Sube", type: "Fruit", rarity: "Common", img: "🍋", baseMult: 1.2 },
-  "f_bara": { id: "f_bara", name: "Bara Bara", type: "Fruit", rarity: "Uncommon", img: "🍊", baseMult: 1.5 },
-  "f_gomu": { id: "f_gomu", name: "Gomu Gomu", type: "Fruit", rarity: "Rare", img: "🍇", baseMult: 2.5 },
-  "f_mera": { id: "f_mera", name: "Mera Mera", type: "Fruit", rarity: "Epic", img: "🔥", baseMult: 5.0 },
-  "f_yami": { id: "f_yami", name: "Yami Yami", type: "Fruit", rarity: "Legendary", img: "🌌", baseMult: 16.0 },
-  "f_gura": { id: "f_gura", name: "Gura Gura", type: "Fruit", rarity: "Legendary", img: "🌍", baseMult: 18.0 },
-  "f_magu": { id: "f_magu", name: "Magu Magu", type: "Fruit", rarity: "Mythic", img: "🌋", baseMult: 35.0 },
-  "f_nika": { id: "f_nika", name: "Nika V5", type: "Fruit", rarity: "Divine", img: "☀️", baseMult: 60.0 },
-  
-  "w_pipe": { id: "w_pipe", name: "Tuyau", type: "Weapon", rarity: "Common", img: "🏏", baseMult: 1.1 },
-  "w_shark": { id: "w_shark", name: "Lame Dentée", type: "Weapon", rarity: "Rare", img: "🗡️", baseMult: 2.0 },
-  "w_shusui": { id: "w_shusui", name: "Shusui", type: "Weapon", rarity: "Legendary", img: "⚔️", baseMult: 12.0 },
-  "w_yoru": { id: "w_yoru", name: "Kokuto Yoru", type: "Weapon", rarity: "Mythic", img: "✝️", baseMult: 25.0 },
-  "w_ace": { id: "w_ace", name: "Meito Ace", type: "Weapon", rarity: "EX", img: "🗡️", baseMult: 100.0 },
-  
-  "g_flint": { id: "g_flint", name: "Silex", type: "Gun", rarity: "Common", img: "🔫", baseMult: 1.1 },
-  "g_rifle": { id: "g_rifle", name: "Fusil", type: "Gun", rarity: "Rare", img: "🎯", baseMult: 2.2 },
-  "g_bazooka": { id: "g_bazooka", name: "Bazooka", type: "Gun", rarity: "Epic", img: "🚀", baseMult: 4.5 },
-  
-  "h_bandana": { id: "h_bandana", name: "Bandana", type: "Head", rarity: "Common", img: "🪢", baseMult: 1.1 },
-  "c_marine": { id: "c_marine", name: "Manteau", type: "Chest", rarity: "Rare", img: "🧥", baseMult: 1.5 },
-  "gl_brawler": { id: "gl_brawler", name: "Gants Boxe", type: "Gloves", rarity: "Epic", img: "🥊", baseMult: 3.0 },
-  "b_sanji": { id: "b_sanji", name: "Bottes", type: "Boots", rarity: "Legendary", img: "👢", baseMult: 8.0 },
-  "a_saturn": { id: "a_saturn", name: "Aura Saturn", type: "Accessory", rarity: "Mythic", img: "🕷️", baseMult: 50.0 }
-};
-
-const PETS_DB = {
-  "p_chouchou": { id: "p_chouchou", name: "Chouchou", rarity: "Common", img: "🐕", bonusType: "beli", bonusVal: 0.2, desc: "+20% Beli" },
-  "p_lapin": { id: "p_lapin", name: "Lapin des Neiges", rarity: "Uncommon", img: "🐇", bonusType: "xp", bonusVal: 0.3, desc: "+30% XP" },
-  "p_dugong": { id: "p_dugong", name: "Kung-Fu Dugong", rarity: "Rare", img: "🐢", bonusType: "dmg", bonusVal: 0.5, desc: "+50% Dégâts" },
-  "p_karoo": { id: "p_karoo", name: "Karoo", rarity: "Epic", img: "🦆", bonusType: "speed", bonusVal: 10, desc: "-10ms Délai" },
-  "p_surume": { id: "p_surume", name: "Kraken Surume", rarity: "Mythic", img: "🦑", bonusType: "dmg", bonusVal: 3.0, desc: "+300% Dégâts" },
-  "p_zunisha": { id: "p_zunisha", name: "Zunisha", rarity: "Divine", img: "🐘", bonusType: "all", bonusVal: 2.0, desc: "Stats x2.0" },
-};
-
-const SHIPS = {
-  "sh_barque": { name: "Chaloupe", img: "🛶", cost: 0, clickDelay: 350, extraBeli: 1 },
-  "sh_merry": { name: "Vogue Merry", img: "🐑", cost: 100000, clickDelay: 250, extraBeli: 1.5 },
-  "sh_sunny": { name: "Thousand Sunny", img: "🦁", cost: 2000000, clickDelay: 120, extraBeli: 3.0 }
-};
-
-const RELICS = {
-  "r_cursed": { id: "r_cursed", name: "Kitetsu Maudit", img: "👺", cost: 500000, mult: 4.0, desc: "Dégâts x4 (Pas d'esquive)" }
-};
-
-const REBIRTH_SHOP = {
-  "rb_haki": { id: "rb_haki", name: "Haki Transcendant", desc: "+100% Dégâts Base", cost: 1, type: "dmg", val: 1.0 },
-  "rb_xp": { id: "rb_xp", name: "Volonté Transmise", desc: "+50% Gain XP", cost: 1, type: "xp", val: 0.5 },
-  "rb_luck": { id: "rb_luck", name: "Destin des D.", desc: "+1% Taux EX", cost: 5, type: "exRate", val: 0.01 },
-  "rb_energy": { id: "rb_energy", name: "Énergie Infinie", desc: "+20% Régén Ki", cost: 2, type: "kiRegen", val: 0.2 },
-};
-
-const SEAS = {
-  "East Blue": [
-    { id:"m1", name: "Sbire Pirate", hp: 100, beli: 20, xp: 15, emoji: "🗡️", elem: "STR" }, 
-    { id:"m2", name: "Marine Recrue", hp: 350, beli: 50, xp: 45, emoji: "🛡️", elem: "AGI" }, 
-    { id:"m3", name: "Krieg", hp: 1500, beli: 200, xp: 150, emoji: "⚓", elem: "PHY" }, 
-    { id:"m4", name: "Arlong", hp: 3500, beli: 500, xp: 350, gems: 10, bounty: 1000, emoji: "🦈", elem: "AGI", isBoss: true, drops: [{id: "w_shark", chance: 0.15}] }
-  ],
-  "Grand Line": [
-    { id:"m5", name: "Agent Baroque", hp: 10000, beli: 800, xp: 500, emoji: "🦂", elem: "INT" }, 
-    { id:"m6", name: "Vice-Amiral", hp: 50000, beli: 2500, xp: 1500, emoji: "🎖️", elem: "TEQ" }, 
-    { id:"m7", name: "Pacifista PX", hp: 80000, beli: 4500, xp: 2500, emoji: "🤖", elem: "PHY", drops: [{id: "c_marine", chance: 0.10}] }, 
-    { id:"m8", name: "Crocodile", hp: 150000, beli: 10000, xp: 6000, gems: 50, bounty: 15000, emoji: "🐊", elem: "TEQ", isBoss: true, drops: [{id: "w_shusui", chance: 0.05}] }
-  ],
-  "Nouveau Monde": [
-    { id:"m9", name: "Gifters", hp: 500000, beli: 15000, xp: 8000, emoji: "🐃", elem: "STR" }, 
-    { id:"m10", name: "Samouraï Wano", hp: 1000000, beli: 35000, xp: 20000, emoji: "👹", elem: "AGI", drops: [{id: "w_shusui", chance: 0.05}] }, 
-    { id:"m11", name: "Tobiroppo", hp: 3000000, beli: 85000, xp: 45000, emoji: "🦕", elem: "PHY" }, 
-    { id:"m12", name: "Kaido", hp: 20000000, beli: 500000, xp: 200000, gems: 500, bounty: 500000, emoji: "🐉", elem: "STR", isBoss: true, drops: [{id: "w_yoru", chance: 0.02}] }
-  ]
-};
-
-const CREW_MEMBERS = [
-  { id: "c_coby", name: "Koby", rarity: "Common", img: "🧹", mult: 1.1, elem: "AGI", tags: ["Marine"] },
-  { id: "c_arlong", name: "Arlong", rarity: "Uncommon", img: "🦈", mult: 1.2, elem: "AGI", tags: ["Fishman"] },
-  { id: "c1", name: "Zoro", rarity: "Rare", img: "⚔️", mult: 1.5, elem: "TEQ", tags: ["StrawHat", "Supernova"] },
-  { id: "c2", name: "Nami", rarity: "Epic", img: "🧭", mult: 2.0, elem: "INT", tags: ["StrawHat"] },
-  { id: "c_robin", name: "Robin", rarity: "Epic", img: "🌸", mult: 2.5, elem: "PHY", tags: ["StrawHat"] },
-  { id: "c4", name: "Sanji", rarity: "Legendary", img: "🍳", mult: 3.0, elem: "STR", tags: ["StrawHat"] },
-  { id: "c3", name: "Jinbe", rarity: "Mythic", img: "🥋", mult: 5.0, elem: "AGI", tags: ["StrawHat", "Fishman", "Warlord"] },
-  { id: "c_law", name: "Law", rarity: "Divine", img: "🩺", mult: 8.0, elem: "INT", tags: ["Supernova", "Warlord", "WillOfD"] },
-  { id: "c_luffy", name: "Luffy", rarity: "Divine", img: "🍖", mult: 15.0, elem: "STR", tags: ["StrawHat", "Supernova", "WillOfD"] },
-  { id: "c_kaido", name: "Kaido", rarity: "EX", img: "🐉", mult: 35.0, elem: "PHY", tags: ["Yonko"] },
-  { id: "c_shanks", name: "Shanks", rarity: "EX", img: "🗡️", mult: 50.0, elem: "STR", tags: ["Yonko", "HakiMaster"] },
-  { id: "c_roger", name: "Roger", rarity: "EX", img: "👑", mult: 100.0, elem: "INT", tags: ["PirateKing", "WillOfD", "HakiMaster"] }
-];
-
-const SYNERGIES = [
-  { name: "Monster Trio", req: ["c1", "c4", "c_luffy"], mult: 1.5, desc: "Dégâts x1.5" },
-  { name: "Volonté du D.", tag: "WillOfD", count: 2, mult: 1.3, desc: "Dégâts x1.3" },
-  { name: "Les Empereurs", tag: "Yonko", count: 2, mult: 2.0, desc: "Dégâts x2.0" },
-  { name: "Chapeaux de Paille", tag: "StrawHat", count: 4, mult: 1.4, desc: "Dégâts x1.4" }
-];
-
-// --- CARTES DBL V23 ---
-const DBL_CARDS = [
-  { id: "strike", name: "Frappe", cost: 20, bg: "linear-gradient(180deg, #ef4444, #7f1d1d)", icon: "👊", mult: 1.5 },
-  { id: "blast", name: "Kikoha", cost: 30, bg: "linear-gradient(180deg, #eab308, #a16207)", icon: "💥", mult: 2.0 },
-  { id: "special", name: "Spécial", cost: 50, bg: "linear-gradient(180deg, #3b82f6, #1e3a8a)", icon: "🌊", mult: 4.5 },
-  { id: "green", name: "Éveil", cost: 15, bg: "linear-gradient(180deg, #22c55e, #14532d)", icon: "✨", mult: 0 }
-];
-
-const BGM_TRACKS = [
-  { id: "t1", name: "Kyouhei (Combat)", file: "/KYOUHEI.mp3" },
-  { id: "t2", name: "Lease (Chill)", file: "/LEASE.mp3" },
-  { id: "t3", name: "Stealthy Night (Menu)", file: "/Stealty Night Shadow.mp3" }
-];
-
-// --- UTILITAIRES ---
-const Format = { 
-  num: (n) => {
-    if (n < 1000) return Math.floor(n).toString();
-    const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No"];
-    const i = Math.floor(Math.log10(n) / 3);
-    if (i >= suffixes.length) return (n / Math.pow(10, 3 * (suffixes.length - 1))).toFixed(2) + suffixes[suffixes.length - 1];
-    return (n / Math.pow(10, i * 3)).toFixed(2) + suffixes[i];
-  }
-};
-
-const getGrade = (val) => {
-  if (val < 100) return { grade: "F", color: "#9ca3af" };
-  if (val < 1000) return { grade: "D", color: "#22c55e" };
-  if (val < 10000) return { grade: "C", color: "#3b82f6" };
-  if (val < 100000) return { grade: "B", color: "#a855f7" };
-  if (val < 1000000) return { grade: "A", color: "#f43f5e" };
-  if (val < 10000000) return { grade: "S", color: "#eab308" };
-  if (val < 100000000) return { grade: "SS", color: "#ef4444" };
-  return { grade: "Z", color: "transparent", isRainbow: true };
-};
-
-const getTitle = (bounty) => {
-  if (bounty < 5000) return { title: "Mousse", color: "#9ca3af" };
-  if (bounty < 50000) return { title: "Pirate", color: "#22c55e" };
-  if (bounty < 200000) return { title: "Supernova", color: "#3b82f6" };
-  if (bounty < 1000000) return { title: "Grand Corsaire", color: "#a855f7" };
-  if (bounty < 10000000) return { title: "Empereur", color: "#ef4444" };
-  return { title: "Roi des Pirates", color: "#eab308" };
-};
-
-// --- INITIAL STATE ---
-const SAVE_KEY = "GrandPieceSaveV23"; 
-const DEFAULT_PLAYER = {
-  profile: { avatar: "🏴‍☠️", username: "Joueur", flag: "🇫🇷", bio: "Le Roi des Pirates!", titleEquipped: "Mousse", frame: "default", totalSummons: 0, totalKills: 0, totalRaids: 0, highestFloor: 0, titles: ["Mousse", "Pirate", "Supernova", "Grand Corsaire", "Empereur", "Roi des Pirates"] },
-  beli: 0, gems: 0, power: 20, bounty: 0,
-  level: { current: 1, xp: 0, max: 100 },
-  stats: { strength: 0, haki: 0, sword: 0, gun: 0, luck: 0, agility: 0 },
-  hakiTree: { observation: 0, armament: 0, kings: 0 }, hakiPoints: 0,
-  shipId: "sh_barque", equippedRelic: null, unlockedRelics: [],
-  rebirth: 0, rebirthCoins: 0, rebirthUpgrades: {},
-  upgrades: { dmg: 0, beli: 0, xp: 0, speed: 0 },
-  equipped: { fruitId: null, weaponId: null, headId: null, chestId: null, glovesId: null, bootsId: null, accId: null },
-  inventory: [], crewList: [], crewSetup: { active: [null, null, null], support: [null, null, null] }, memberFragments: {},
-  pets: { inventory: [], active: [null, null] }, 
-  pity: { legendary: 0, mythic: 0, ex: 0 },
-  sea: "East Blue", lastDaily: 0, lastLogin: Date.now(), weather: "Calme ☀️", logPoseTime: 0,
-  pvpRank: 1000, towerFloor: 1, playerHp: { current: 1000, max: 1000 },
-  settings: { sound: true, music: false, fastMode: false, hideDmg: false, shake: true, skipLowAnim: true, bgmTrack: 0, bgmVolume: 0.4, autoSellRarities: { Common: false, Uncommon: false, Rare: false, Epic: false } },
-  redeemedCodes: []
-};
 export default function App() {
   const [isLoading, setIsLoading] = useState(true); 
   const [isFadingOut, setIsFadingOut] = useState(false);
@@ -241,6 +50,8 @@ export default function App() {
   const [levelUpFlash, setLevelUpFlash] = useState(false);
   const [summonResult, setSummonResult] = useState(null);
   const [banner, setBanner] = useState("Fruit");
+  const [showDailyModal, setShowDailyModal] = useState(false);
+  const [dailyRewardAmount, setDailyRewardAmount] = useState({ gems: 0, beli: 0 });
 
   // Modals & Sub-states
   const [showProfile, setShowProfile] = useState(false);
@@ -256,6 +67,8 @@ export default function App() {
   const bgmRef = useRef(null);
 
   // --- INIT & TOASTS ---
+
+
   const addToast = (msg, color="#3b82f6") => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, {id, msg, color}]);
@@ -361,7 +174,8 @@ export default function App() {
 
   // --- ENVIRONMENT LOOPS ---
   useEffect(() => {
-    if (isLoading) return;
+    const dps = Math.floor(getDmg() * 2);
+  if (isLoading) return;
     const interval = setInterval(() => {
       setMarketPrices({ "f_sube": 150+Math.random()*200, "f_gomu": 1000+Math.random()*2500, "f_mera": 5000+Math.random()*9000, "f_nika": 30000+Math.random()*80000 });
       const weathers = ["Calme ☀️", "Tempête ⚡", "Canicule 🔥", "Blizzard ❄️"];
@@ -398,130 +212,20 @@ export default function App() {
   }, [autoSummonConfig.active, player.gems, summonResult, cinematicSummon.active, banner]);
 
   // --- SYNERGIES & STATS ENGINE V23 ---
-  const { synMult, activeSyns } = useMemo(() => {
-    let activeSyns = []; let synMult = 1.0;
-    const allCrewIds = [...player.crewSetup.active, ...player.crewSetup.support].filter(Boolean);
-    const allCrewData = allCrewIds.map(id => CREW_MEMBERS.find(m => m.id === id)).filter(Boolean);
-    const allTags = allCrewData.flatMap(c => c.tags || []);
-
-    SYNERGIES.forEach(syn => {
-      let isMet = false;
-      if (syn.req) isMet = syn.req.every(reqId => allCrewIds.includes(reqId));
-      else if (syn.tag && syn.count) { if (allTags.filter(t => t === syn.tag).length >= syn.count) isMet = true; }
-      if (isMet) { synMult *= syn.mult; activeSyns.push({ name: syn.name, mult: syn.mult }); }
-    });
-    return { synMult, activeSyns };
-  }, [player.crewSetup]);
-
-  const getEquipped = (type) => {
-    let equipId = player.equipped[`${type.toLowerCase()}Id`];
-    if (type === "Accessory") equipId = player.equipped.accId;
-    if (!equipId) return null;
-    const invItem = player.inventory.find(i => i.instanceId === equipId);
-    if (!invItem) return null;
-    const baseData = ITEMS_DB[invItem.itemId] || ITEMS_DB["f_sube"];
-    let v2Multiplier = (invItem.awakenLvl >= 10) ? 2.0 : 1.0;
-    return { ...baseData, ...invItem, totalMult: baseData.baseMult * (1 + ((invItem.awakenLvl||0) * 0.1)) * v2Multiplier };
-  };
-
-  const getDmgMult = () => {
-    let bountyBonus = 1 + (player.bounty / 100000);
-    let hakiArmament = 1 + (player.hakiTree.armament * 0.15);
-    let relicBonus = player.equippedRelic ? RELICS[player.equippedRelic].mult : 1;
-    let incDmg = 1 + (player.upgrades.dmg * 0.1); 
-    
-    // Rebirth Upgrades (V23)
-    let rbDmg = 1 + ((player.rebirthUpgrades.rb_haki || 0) * REBIRTH_SHOP.rb_haki.val);
-
-    // Pets Bonus (V23 Fusion Stars)
-    let petDmg = 1.0;
-    player.pets.active.forEach(pInst => {
-      if(!pInst) return;
-      const petItem = player.pets.inventory.find(i=>i.instanceId===pInst);
-      if(petItem) {
-        const pDb = PETS_DB[petItem.itemId];
-        const starsMult = 1 + ((petItem.stars || 1) - 1) * 0.5; // +50% efficacité par étoile
-        if(pDb && (pDb.bonusType === 'dmg' || pDb.bonusType === 'all')) petDmg *= (1 + pDb.bonusVal * starsMult);
-      }
-    });
-
-    let mult = (1 + (player.stats.strength * 0.1) + (player.stats.haki * 0.5) + (player.rebirth * 5)) * bountyBonus * hakiArmament * relicBonus * incDmg * petDmg * rbDmg;
-    
-    ["Fruit", "Weapon", "Head", "Chest", "Gloves", "Boots", "Accessory"].forEach(type => {
-      const eq = getEquipped(type);
-      if (eq) {
-        if (type === "Weapon") mult *= (eq.totalMult + (player.stats.sword * 0.2));
-        else mult *= eq.totalMult;
-      }
-    });
-    
-    player.crewSetup.active.forEach(cId => { const member = CREW_MEMBERS.find(m => m.id === cId); if (member) mult *= member.mult; });
-    player.crewSetup.support.forEach(cId => { const member = CREW_MEMBERS.find(m => m.id === cId); if (member) mult *= (member.mult * 0.5); });
-    
-    mult *= synMult;
-
-    if (battle && battle.elem) {
-      const captainId = player.crewSetup.active[0];
-      const capElem = captainId ? CREW_MEMBERS.find(m=>m.id===captainId)?.elem : "STR";
-      mult *= getElementAdvantage(capElem, battle.elem);
-    }
-    return mult;
-  };
-
-  const getDmg = () => Math.floor(player.power * getDmgMult());
-
-  // --- ACTIONS GLOBALES V23 ---
-  const handleRebirth = () => {
-    playClick();
-    const reqLvl = 50 + (player.rebirth * 50);
-    if (player.level.current < reqLvl) return addToast(`Niveau ${reqLvl} requis !`, "#ef4444");
-    if (window.confirm("Renaître ? Vous obtiendrez des Rebirth Coins pour la boutique d'Ascension.")) {
-      const coinsGained = Math.floor(player.level.current / 50);
-      setPlayer(p => ({
-        ...p, rebirth: p.rebirth + 1, rebirthCoins: p.rebirthCoins + coinsGained, level: { current: 1, xp: 0, max: 100 },
-        stats: { strength: 0, haki: 0, sword: 0, gun: 0, luck: 0, agility: 0 }, beli: 0, power: 20
-      }));
-      setBattle(null); setAutoClick(false);
-      setLevelUpFlash(true); setTimeout(() => setLevelUpFlash(false), 1000);
-      addToast(`🌟 REBIRTH ! +${coinsGained} Rebirth Coins obtenus.`, "#eab308");
-    }
-  };
-
-  const buyRebirthUpgrade = (id) => {
-    playClick();
-    const upg = REBIRTH_SHOP[id];
-    if(player.rebirthCoins >= upg.cost) {
-      setPlayer(p => ({
-        ...p, rebirthCoins: p.rebirthCoins - upg.cost,
-        rebirthUpgrades: { ...p.rebirthUpgrades, [id]: (p.rebirthUpgrades[id] || 0) + 1 }
-      }));
-      addToast(`Ascension ${upg.name} acquise !`, "#a855f7");
-    } else {
-      addToast("Pas assez de Rebirth Coins.", "#ef4444");
-    }
-  };
 
 
-  const trainStat = (statName) => {
-    playClick(); const cost = 100 * Math.pow(1.5, player.stats[statName] || 0);
-    if (player.beli < cost) return addToast(`Fonds insuffisants`, "#ef4444");
-    setPlayer(p => ({ ...p, beli: p.beli - cost, stats: { ...p.stats, [statName]: (p.stats[statName] || 0) + 1 } }));
-  };
 
-  const buyIncrementalUpgrade = (type) => {
-    playClick(); const cost = 10000 * Math.pow(2.5, player.upgrades[type] || 0);
-    if (player.beli < cost) return addToast(`Fonds insuffisants`, "#ef4444");
-    setPlayer(p => ({ ...p, beli: p.beli - cost, upgrades: { ...p.upgrades, [type]: (p.upgrades[type] || 0) + 1 } }));
-  };
-  const buyHakiTalent = (node) => {
-    playClick();
-    if (player.hakiPoints > 0 && player.hakiTree[node] < 5) {
-      setPlayer(p => ({ ...p, hakiPoints: p.hakiPoints - 1, hakiTree: { ...p.hakiTree, [node]: p.hakiTree[node] + 1 } }));
-      addToast(`Haki ${node} amélioré !`, "#a855f7");
-    } else {
-      addToast("Points Haki insuffisants ou max atteint.", "#ef4444");
-    }
-  };
+
+
+
+
+
+
+
+
+
+
+
 
   const sellCommons = () => {
     playClick(); let kept = []; let sold = 0;
@@ -557,32 +261,17 @@ export default function App() {
   const claimDaily = () => {
     playClick(); const now = Date.now(); const oneDay = 24 * 60 * 60 * 1000;
     if (now - player.lastDaily > oneDay) {
-      setPlayer(p => ({ ...p, gems: p.gems + 100, beli: p.beli + 15000, lastDaily: now }));
-      addToast("🎁 Récompense Quotidienne récupérée !", "#eab308");
-    } else addToast(`Revenez dans ${Math.ceil((oneDay - (now - player.lastDaily)) / 3600000)} heures !`, "#9ca3af");
-  };
-
-  const tradeMarketFruit = (itemId, mode) => {
-    playClick(); const price = marketPrices[itemId] || 500;
-    if (mode === "BUY") {
-      if (player.beli >= price) {
-        setPlayer(p => ({ ...p, beli: p.beli - price, inventory: [...p.inventory, { instanceId: Date.now() + Math.random().toString(), itemId: itemId, awakenLvl: 0 }] }));
-        addToast("Achat effectué !", "#22c55e");
-      } else addToast("Fonds insuffisants.", "#ef4444");
+      const gemsReward = 100 + Math.floor(Math.random() * 50);
+      const beliReward = 15000 * player.level.current;
+      setPlayer(p => ({ ...p, gems: p.gems + gemsReward, beli: p.beli + beliReward, lastDaily: now }));
+      setDailyRewardAmount({ gems: gemsReward, beli: beliReward });
+      setShowDailyModal(true);
     } else {
-      const idx = player.inventory.findIndex(i => i.itemId === itemId);
-      if (idx !== -1) {
-        setPlayer(p => { let inv = [...p.inventory]; inv.splice(idx, 1); return { ...p, beli: p.beli + price, inventory: inv }; });
-        addToast(`Vendu pour ${Format.num(price)} ฿`, "#22c55e");
-      } else addToast("Vous ne possédez pas cet objet.", "#9ca3af");
+      addToast(`Revenez dans ${Math.ceil((oneDay - (now - player.lastDaily)) / 3600000)} heures !`, "#9ca3af");
     }
   };
 
-  const buyShip = (id, cost) => {
-    playClick();
-    if (player.beli >= cost) { setPlayer(p => ({ ...p, beli: p.beli - cost, shipId: id })); addToast("Nouveau navire !", "#38bdf8"); } 
-    else addToast("Fonds insuffisants.", "#ef4444");
-  };
+
 
   const changeSea = (newSea) => {
     playClick();
@@ -619,90 +308,10 @@ export default function App() {
     addToast("⚡ Auto-Build: Équipement Optimal", "#eab308");
   };
 
-  const handleAutoSell = (pullsArray) => {
-    let kept = []; let soldValue = 0;
-    pullsArray.forEach(p => {
-      const dbItem = p.type === "item" ? ITEMS_DB[p.itemId] : p.type === "pet" ? PETS_DB[p.id] : CREW_MEMBERS.find(c=>c.id===p.id);
-      if (!dbItem) return;
-      if (p.type === "crew" || p.type === "pet") { kept.push(p); return; } 
-      if (player.settings.autoSellRarities[dbItem.rarity]) soldValue += RARITY[dbItem.rarity].val * 500; 
-      else kept.push(p);
-    });
-    if (soldValue > 0) setPlayer(p => ({ ...p, beli: p.beli + soldValue }));
-    return kept;
-  };
+
 
   // --- GACHA ENGINE ---
-  const performSummon = (bannerType, amount, isAuto = false) => {
-    if (!isAuto) playClick();
-    const cost = amount === 1 ? 50 : 450;
-    if (player.gems < cost) { setAutoSummonConfig(c => ({...c, active: false})); if(!isAuto) addToast("Pas assez de gemmes !", "#ef4444"); return; }
-    
-    let pulls = []; let hasEX = false; let maxRarityVal = 0; let bestItemForCine = null;
-    let newLegPity = player.pity.legendary + amount;
-    let newMythicPity = player.pity.mythic + amount;
-    let newEXPity = player.pity.ex + amount;
-    
-    const isCrew = bannerType === "Crew";
-    const isPet = bannerType === "Pet";
-    const poolData = isCrew ? CREW_MEMBERS : isPet ? Object.values(PETS_DB) : Object.values(ITEMS_DB).filter(i => i.type === bannerType || (bannerType==='Head' && ['Head','Chest','Gloves','Boots','Accessory'].includes(i.type)));
 
-    for(let i=0; i<amount; i++) {
-      const rand = Math.random(); let rarity = "Common";
-      if (newEXPity >= 800) { rarity = "EX"; newEXPity = 0; }
-      else if (newMythicPity >= 400) { rarity = "Divine"; newMythicPity = 0; }
-      else if (newLegPity >= 100) { rarity = "Legendary"; newLegPity = 0; }
-      else {
-        if(rand < (0.005 + (player.rebirthUpgrades.rb_luck || 0)*REBIRTH_SHOP.rb_luck.val)) { rarity = "EX"; hasEX = true; newEXPity = 0; }
-        else if(rand < 0.02) { rarity = "Divine"; newMythicPity = 0; } 
-        else if(rand < 0.08) { rarity = "Mythic"; }
-        else if(rand < 0.20) { rarity = "Legendary"; }
-        else if(rand < 0.40) { rarity = "Epic"; }
-        else if(rand < 0.70) { rarity = "Rare"; }
-      }
-      
-      if((isCrew || isPet) && (rarity === "Common" || rarity === "Uncommon")) rarity = "Common"; 
-      const available = poolData.filter(f => f.rarity === rarity || ((isCrew || isPet) && f.rarity === "Rare")); 
-      const chosen = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : poolData[0];
-      
-      if (RARITY[chosen?.rarity]?.val > maxRarityVal) { maxRarityVal = RARITY[chosen.rarity].val; bestItemForCine = chosen; }
-      
-      if(isCrew) pulls.push({ type: "crew", id: chosen.id });
-      else if(isPet) pulls.push({ type: "pet", id: chosen.id, instanceId: Date.now() + Math.random().toString() });
-      else pulls.push({ type: "item", instanceId: Date.now() + Math.random().toString(), itemId: chosen.id, awakenLvl: 0 });
-    }
-
-    setPlayer(p => {
-      let newP = { ...p, gems: p.gems - cost, profile: {...p.profile, totalSummons: p.profile.totalSummons + amount}, pity: { legendary: newLegPity, mythic: newMythicPity, ex: newEXPity } };
-      if (isCrew) {
-        pulls.forEach(pull => { 
-          if(newP.crewList.includes(pull.id)) newP.memberFragments[pull.id] = (newP.memberFragments[pull.id]||0) + 5; 
-          else newP.crewList.push(pull.id); 
-        });
-      } else if (isPet) {
-        pulls.forEach(pull => { newP.pets.inventory.push({ instanceId: pull.instanceId, itemId: pull.id, stars: 1 }); });
-      } else {
-        const keptItems = handleAutoSell(pulls);
-        newP.inventory = [...newP.inventory, ...keptItems];
-      }
-      return newP;
-    });
-    
-    const displayRes = pulls.map(p => isCrew ? CREW_MEMBERS.find(m=>m.id===p.id) : isPet ? PETS_DB[p.id] : { ...ITEMS_DB[p.itemId], instanceId: p.instanceId });
-    
-    if (!isAuto && (hasEX || maxRarityVal >= RARITY.Divine.val)) {
-      setAutoClick(false); setCinematicSummon({ active: true, item: bestItemForCine });
-      setTimeout(() => {
-        setCinematicSummon({ active: false, item: null });
-        setSummonResult(displayRes);
-        setTimeout(() => setSummonResult(null), 5000);
-      }, 4000);
-    } else {
-      if (isAuto && player.settings.skipLowAnim && maxRarityVal < RARITY.Legendary.val) { /* Skip Anim */ } 
-      else { setSummonResult(displayRes); setTimeout(() => setSummonResult(null), isAuto ? 1500 : 5000); }
-    }
-    if (isAuto && maxRarityVal >= RARITY[autoSummonConfig.targetRarity].val) setAutoSummonConfig(c => ({...c, active: false}));
-  };
 
   // ==========================================
   // COMBAT ENGINE V23 (DBL STYLE)
@@ -765,12 +374,18 @@ export default function App() {
     return () => clearInterval(loop);
   }, [battle, isLoading, combatState.stunTime, player.rebirthUpgrades]);
 
+
   // Player Death Check
   useEffect(() => {
     if(player.playerHp.current <= 0 && battle) {
-      addToast("💀 Vous avez été vaincu !", "#ef4444");
-      setBattle(null); setAutoClick(false); setRaidActive(false); setCombatDeck([]);
-      setPlayer(p => ({...p, playerHp: {...p.playerHp, current: p.playerHp.max}, bounty: Math.max(0, Math.floor(p.bounty * 0.95))}));
+      if (gameMode === "pvp") {
+        setPlayer(p => ({...p, pvpRank: Math.max(0, p.pvpRank - 25), playerHp: {...p.playerHp, current: p.playerHp.max}}));
+        addToast("☠️ Défaite... -25 Rang", "#ef4444");
+      } else {
+        setPlayer(p => ({...p, playerHp: {...p.playerHp, current: p.playerHp.max}, bounty: Math.max(0, Math.floor(p.bounty * 0.95))}));
+        addToast("☠️ K.O... Prime réduite.", "#ef4444");
+      }
+      setBattle(null); setAutoClick(false);
     }
   }, [player.playerHp.current, battle]);
 
@@ -784,38 +399,7 @@ export default function App() {
   };
 
   // 4. Executer une carte
-  const executeCard = (card, index) => {
-    if (!battle || combatState.energy < card.cost) return;
-    playClick();
 
-    // Consume Card & Energy
-    setCombatDeck(prev => prev.filter((_, i) => i !== index));
-    if (card.hasDB && dragonBalls < 7) setDragonBalls(prev => prev + 1);
-
-    // Buff "Green Card"
-    if (card.id === "green") {
-      setCombatState(prev => ({ ...prev, energy: Math.min(100, prev.energy - card.cost + 40), vanishing: 100 }));
-      spawnText("ÉVEIL ! KI RESTAURÉ", 0, false, "#22c55e");
-      return;
-    }
-
-    // Damage Calculation
-    let dmg = getDmg() * card.mult;
-    let stun = card.id === "special" ? 2 : 0;
-    
-    if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), card.id==="special"?300:150); }
-    if(card.id==="strike") { setHitstop(true); setTimeout(() => setHitstop(false), 80); }
-
-    const isCrit = Math.random() < Math.min(0.80, 0.15 + (player.stats.luck * 0.01));
-    const finalDmg = isCrit ? Math.floor(dmg * (3.0 + (player.stats.agility * 0.2))) : Math.floor(dmg);
-
-    setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: stun > 0 ? stun : prev.stunTime }));
-    spawnText(card.icon + " ", finalDmg, isCrit, card.id==="special"?"#3b82f6":card.id==="blast"?"#eab308":"#fff");
-    
-    const newHp = Math.max(0, battle.hp - finalDmg);
-    if (newHp <= 0) handleVictory();
-    else setBattle(prev => ({ ...prev, hp: newHp }));
-  };
 
   // 5. Rising Rush
   const executeRisingRush = () => {
@@ -917,6 +501,10 @@ export default function App() {
     setMainTab("combat");
   };
 
+  const { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
+  const { performSummon, handleAutoSell } = useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast);
+  const { fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
+
   // --- RENDER CINEMATICS & LOADING ---
   if (cinematicSummon.active && cinematicSummon.item) {
     const item = cinematicSummon.item;
@@ -948,6 +536,7 @@ export default function App() {
   }
 
 
+
   if (isLoading) {
     return (
       <div className={`${isFadingOut ? 'fade-out' : ''}`} style={{ background: "#050505", height: "100dvh", width: "100vw", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#f8fafc" }}>
@@ -959,13 +548,25 @@ export default function App() {
   }
 
   return (
-    <div style={{ background: "#050505", height: "100dvh", width: "100vw", color: "#f8fafc", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ background: gameMode === "tower" ? "#1e1b4b" : gameMode === "pvp" ? "#450a0a" : player.sea === "Nouveau Monde" ? "#171717" : player.sea === "Grand Line" ? "#0f172a" : "#050505", height: "100dvh", width: "100vw", color: "#f8fafc", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", transition: "background 0.5s" }}>
       {levelUpFlash && <div style={{ position: "absolute", inset: 0, background: "rgba(255, 255, 255, 0.4)", zIndex: 999, pointerEvents: "none", animation: "flashAnim 0.5s ease-out" }} />}
       
       {showUltAnim.active && (
         <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 900, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "ultimateReveal 2s forwards" }}>
           <div style={{ fontSize: "150px", filter: "drop-shadow(0 0 30px #ef4444)" }}>{showUltAnim.char}</div>
           <h1 className="rainbow-text" style={{fontSize:"60px", margin:0, fontStyle: "italic"}}>{showUltAnim.text}</h1>
+        </div>
+      )}
+
+      {showDailyModal && (
+        <div className="modal-overlay ios-tap" onClick={() => setShowDailyModal(false)} style={{ zIndex: 1100 }}>
+          <div className="rbx-panel fade-in" style={{ width: "90%", maxWidth: "300px", border: "2px solid #eab308", textAlign: "center", animation: "ultimateReveal 0.5s forwards" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: "60px", animation: "divineFloat 2s infinite alternate" }}>🎁</div>
+            <h2 style={{ color: "#eab308", margin: "10px 0" }}>BONUS QUOTIDIEN</h2>
+            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#38bdf8", margin: "10px 0" }}>+{Format.num(dailyRewardAmount.gems)} 💎</div>
+            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#fbbf24", margin: "10px 0" }}>+{Format.num(dailyRewardAmount.beli)} ฿</div>
+            <button onClick={() => setShowDailyModal(false)} className="rbx-btn rbx-btn-gold" style={{ width: "100%", marginTop: "15px" }}>SUPER !</button>
+          </div>
         </div>
       )}
 
@@ -1054,6 +655,12 @@ export default function App() {
         @keyframes popLogo { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
         @keyframes fadeText { to { opacity: 1; } }
         @keyframes loadBar { 0% { width: 0%; } 20% { width: 30%; } 80% { width: 80%; } 100% { width: 100%; } }
+
+        /* V24 PET AURAS */
+        .pet-aura-2 { box-shadow: 0 0 10px rgba(34,197,94,0.5); animation: petPulse 2s infinite; }
+        .pet-aura-3 { box-shadow: 0 0 15px rgba(59,130,246,0.8), inset 0 0 5px rgba(59,130,246,0.5); border: 1px solid #3b82f6 !important; }
+        .pet-aura-4 { box-shadow: 0 0 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(239,68,68,0.5); border: 2px solid #000 !important; animation: hakiPulse 1.5s infinite alternate; }
+        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
       `}</style>
 
       <ProfileModal showProfile={showProfile} setShowProfile={setShowProfile} player={player} profileTab={profileTab} setProfileTab={setProfileTab} setPlayer={setPlayer} getDmg={getDmg} />
@@ -1065,7 +672,12 @@ export default function App() {
             <div className={`frame-${player.profile.frame}`} style={{ fontSize: "20px", background: "#000", borderRadius: "50%", width:"32px", height:"32px", display:"flex", alignItems:"center", justifyContent:"center" }}>{player.profile.avatar}</div>
             <div>
               <div style={{ fontSize: "13px", fontWeight: "900", color: getTitle(player.bounty).color }}>{player.profile.titleEquipped}</div>
-              <div style={{ fontSize: "10px", color: "#a1a1aa" }}>{player.profile.username} {player.profile.flag}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "2px" }}>
+                <span style={{ fontSize: "10px", fontWeight: "bold", color: "#f8fafc" }}>Niv. {player.level.current}</span>
+                <div style={{ width: "60px", height: "6px", background: "#27272a", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ width: `${(player.level.xp / player.level.max) * 100}%`, background: "#38bdf8", height: "100%" }} />
+                </div>
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: "15px", paddingLeft: "5px" }}>
@@ -1106,13 +718,16 @@ export default function App() {
             mainTab={mainTab} player={player} playClick={playClick} hubTab={hubTab} setHubTab={setHubTab}
             claimDaily={claimDaily} enterRaid={enterRaid} changeSea={changeSea} marketPrices={marketPrices}
             autoSummonConfig={autoSummonConfig} setAutoSummonConfig={setAutoSummonConfig} setPlayer={setPlayer} buyShip={buyShip} legalMacro={legalMacro} setLegalMacro={setLegalMacro}
+            startRaid={startRaid} tradeMarketFruit={tradeMarketFruit} redeemCode={redeemCode} promoCode={promoCode} setPromoCode={setPromoCode}
         />
       </div>
 
       {/* --- BOTTOM NAVIGATION BAR V23 --- */}
       <div style={{ background: "rgba(9, 9, 11, 0.98)", borderTop: "1px solid #27272a", display: "flex", justifyContent: "space-between", padding: "10px 10px calc(env(safe-area-inset-bottom) + 15px)", zIndex: 100 }}>
         {[ { id: "combat", icon: "⚔️", label: "COMBAT" }, { id: "train", icon: "💪", label: "TRAIN" }, { id: "summon", icon: "✨", label: "GACHA" }, { id: "roster", icon: "⚓", label: "ÉQUIPE" }, { id: "inventory", icon: "🎒", label: "SAC" }, { id: "hub", icon: "🧭", label: "MENU" } ].map(t => (
-          <div key={t.id} onClick={() => { playClick(); setMainTab(t.id); }} className="ios-tap" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "4px 0", opacity: mainTab === t.id ? 1 : 0.4, transition: "0.2s" }}>
+          <div key={t.id} onClick={() => { playClick(); setMainTab(t.id); }} className="ios-tap" style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "4px 0", opacity: mainTab === t.id ? 1 : 0.4, transition: "0.2s" }}>
+            {t.id === "hub" && (Date.now() - player.lastDaily > 24 * 60 * 60 * 1000) && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
+            {t.id === "train" && (player.beli >= 10000 * Math.pow(2.5, player.upgrades.dmg || 0)) && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
             <span style={{ fontSize: "20px", filter: mainTab === t.id ? "drop-shadow(0 0 8px rgba(56,189,248,0.8))" : "none" }}>{t.icon}</span><span style={{ fontSize: "8px", fontWeight: "900", color: mainTab === t.id ? "#38bdf8" : "#9ca3af" }}>{t.label}</span>
           </div>
         ))}

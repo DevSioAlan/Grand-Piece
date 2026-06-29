@@ -4,7 +4,7 @@ import { PETS_DB } from "../data/pets";
 import { REBIRTH_SHOP, getElementAdvantage } from "../data/constants";
 import { CREW_MEMBERS, SYNERGIES } from "../data/combat";
 
-export function useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText) {
+export function useCombatEngine(player, battle, setBattle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText, handleVictory) {
 
   const getEquipped = (type) => {
     let equipId = player.equipped[`${type.toLowerCase()}Id`];
@@ -130,7 +130,17 @@ export function useCombatEngine(player, battle, setCombatState, dragonBalls, set
 
 
     // L'application des dégats est asynchrone pour l'effet visuel
-    return { finalDmg, stun }; // Returns damage to be processed by the main loop
+
+    // Application des dégâts immédiate (comme avant)
+    if (finalDmg > 0 && battle) {
+      setBattle(prev => {
+        const newHp = Math.max(0, prev.hp - finalDmg);
+        if (newHp <= 0) { setTimeout(() => handleVictory(), 100); }
+        return { ...prev, hp: newHp };
+      });
+    }
+    return { finalDmg, stun };
+
   };
 
   return { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns };
