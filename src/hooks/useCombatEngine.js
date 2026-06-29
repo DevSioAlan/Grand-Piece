@@ -1,10 +1,10 @@
 import { useMemo } from "react";
 import { RELICS, ITEMS_DB } from "../data/items";
 import { PETS_DB } from "../data/pets";
-import { REBIRTH_SHOP, getElementAdvantage } from "../data/constants";
+import { REBIRTH_SHOP, getElementAdvantage, TITLES_BUFFS } from "../data/constants";
 import { CREW_MEMBERS, SYNERGIES } from "../data/combat";
 
-export function useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText) {
+export function useCombatEngine(player, battle, setBattle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText, handleVictory) {
 
   const getEquipped = (type) => {
     let equipId = player.equipped[`${type.toLowerCase()}Id`];
@@ -73,6 +73,16 @@ export function useCombatEngine(player, battle, setCombatState, dragonBalls, set
       const capElem = captainId ? CREW_MEMBERS.find(m=>m.id===captainId)?.elem : "STR";
       mult *= getElementAdvantage(capElem, battle.elem);
     }
+
+    let titleMult = 1.0;
+    const activeTitle = player.profile.titleEquipped;
+    if (activeTitle === "Pirate") titleMult = 1.05;
+    else if (activeTitle === "Supernova") titleMult = 1.10;
+    else if (activeTitle === "Grand Corsaire") titleMult = 1.15;
+    else if (activeTitle === "Empereur") titleMult = 1.25;
+    else if (activeTitle === "Roi des Pirates") titleMult = 1.50;
+
+    mult *= titleMult;
     return mult;
   };
 
@@ -94,8 +104,25 @@ export function useCombatEngine(player, battle, setCombatState, dragonBalls, set
     }
 
     // Calcul Dégâts
-    let dmg = getDmg() * card.mult;
+
+    let dmg = getDmg() * card.mult * (1 + (combatState.comboCount * 0.1));
+
+
     let stun = card.id === "special" ? 2 : 0;
+
+    // Contre Card Logic
+    if (card.id === "counter") {
+        if (combatState.enemyAttacking) {
+            spawnText("CONTRE PARFAIT! ", 0, true, "#38bdf8");
+            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: 2, enemyAttacking: false }));
+            return { finalDmg: 0, stun: 2 };
+        } else {
+            spawnText("RATÉ... ", 0, false, "#9ca3af");
+            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), comboCount: 0 }));
+            return { finalDmg: 0, stun: 0 };
+        }
+    }
+
 
     if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), card.id==="special"?300:150); }
     if(card.id==="strike") { setHitstop(true); setTimeout(() => setHitstop(false), 80); }
@@ -104,10 +131,26 @@ export function useCombatEngine(player, battle, setCombatState, dragonBalls, set
     let finalDmg = Math.floor(isCrit ? dmg * 2 : dmg);
 
     setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: stun > 0 ? stun : prev.stunTime }));
+
     spawnText(card.icon + " ", finalDmg, isCrit, card.id==="special"?"#3b82f6":card.id==="blast"?"#eab308":"#fff");
 
+    if(card.id === "strike" || card.id === "blast") {
+        setCombatState(prev => ({ ...prev, comboCount: prev.comboCount + 1 }));
+    }
+
+
     // L'application des dégats est asynchrone pour l'effet visuel
-    return { finalDmg, stun }; // Returns damage to be processed by the main loop
+
+    // Application des dégâts immédiate (comme avant)
+    if (finalDmg > 0 && battle) {
+      setBattle(prev => {
+        const newHp = Math.max(0, prev.hp - finalDmg);
+        if (newHp <= 0) { setTimeout(() => handleVictory(), 100); }
+        return { ...prev, hp: newHp };
+      });
+    }
+    return { finalDmg, stun };
+
   };
 
   return { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns };

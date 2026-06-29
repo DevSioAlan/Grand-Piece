@@ -1,202 +1,21 @@
+
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { RARITY, ELEMENTS, getElementAdvantage, REBIRTH_SHOP, Format, getGrade, getTitle, SAVE_KEY, DEFAULT_PLAYER } from './data/constants';
+import { ITEMS_DB, SHIPS, RELICS } from './data/items';
+import { PETS_DB } from './data/pets';
+import { SEAS, CREW_MEMBERS, SYNERGIES, DBL_CARDS, BGM_TRACKS } from './data/combat';
 
-// ==========================================
-// CONFIGURATION & DONNÉES DU JEU (V24)
-// ==========================================
+import { useCombatEngine } from './hooks/useCombatEngine';
+import { useGacha } from './hooks/useGacha';
+import { useIncremental } from './hooks/useIncremental';
 
-const RARITY = {
-  Common: { name: "Commun", color: "#9ca3af", val: 1 },
-  Uncommon: { name: "Peu Commun", color: "#22c55e", val: 2 },
-  Rare: { name: "Rare", color: "#3b82f6", val: 3 },
-  Epic: { name: "Épique", color: "#a855f7", val: 4 },
-  Legendary: { name: "Légendaire", color: "#eab308", val: 5 },
-  Mythic: { name: "Mythique", color: "#ef4444", val: 6 },
-  Divine: { name: "Divin", color: "#06b6d4", val: 7 },
-  EX: { name: "EX Extrême", color: "#f472b6", val: 8 }
-};
-
-const ELEMENTS = {
-  STR: { name: "STR", color: "#ef4444", icon: "🔴" },
-  AGI: { name: "AGI", color: "#3b82f6", icon: "🔵" },
-  TEQ: { name: "TEQ", color: "#22c55e", icon: "🟢" },
-  INT: { name: "INT", color: "#a855f7", icon: "🟣" },
-  PHY: { name: "PHY", color: "#eab308", icon: "🟡" }
-};
-
-const getElementAdvantage = (atkElem, defElem) => {
-  if (!atkElem || !defElem) return 1.0;
-  if (atkElem === 'STR' && defElem === 'PHY') return 1.2;
-  if (atkElem === 'PHY' && defElem === 'INT') return 1.2;
-  if (atkElem === 'INT' && defElem === 'TEQ') return 1.2;
-  if (atkElem === 'TEQ' && defElem === 'AGI') return 1.2;
-  if (atkElem === 'AGI' && defElem === 'STR') return 1.2;
-  if (atkElem === 'PHY' && defElem === 'STR') return 0.8;
-  if (atkElem === 'INT' && defElem === 'PHY') return 0.8;
-  if (atkElem === 'TEQ' && defElem === 'INT') return 0.8;
-  if (atkElem === 'AGI' && defElem === 'TEQ') return 0.8;
-  if (atkElem === 'STR' && defElem === 'AGI') return 0.8;
-  return 1.0;
-};
-
-const ITEMS_DB = {
-  "f_sube": { id: "f_sube", name: "Sube Sube", type: "Fruit", rarity: "Common", img: "🍋", baseMult: 1.2 },
-  "f_bara": { id: "f_bara", name: "Bara Bara", type: "Fruit", rarity: "Uncommon", img: "🍊", baseMult: 1.5 },
-  "f_gomu": { id: "f_gomu", name: "Gomu Gomu", type: "Fruit", rarity: "Rare", img: "🍇", baseMult: 2.5 },
-  "f_mera": { id: "f_mera", name: "Mera Mera", type: "Fruit", rarity: "Epic", img: "🔥", baseMult: 5.0 },
-  "f_yami": { id: "f_yami", name: "Yami Yami", type: "Fruit", rarity: "Legendary", img: "🌌", baseMult: 16.0 },
-  "f_gura": { id: "f_gura", name: "Gura Gura", type: "Fruit", rarity: "Legendary", img: "🌍", baseMult: 18.0 },
-  "f_magu": { id: "f_magu", name: "Magu Magu", type: "Fruit", rarity: "Mythic", img: "🌋", baseMult: 35.0 },
-  "f_nika": { id: "f_nika", name: "Nika V5", type: "Fruit", rarity: "Divine", img: "☀️", baseMult: 60.0 },
-  "w_pipe": { id: "w_pipe", name: "Tuyau", type: "Weapon", rarity: "Common", img: "🏏", baseMult: 1.1 },
-  "w_shark": { id: "w_shark", name: "Lame Dentée", type: "Weapon", rarity: "Rare", img: "🗡️", baseMult: 2.0 },
-  "w_shusui": { id: "w_shusui", name: "Shusui", type: "Weapon", rarity: "Legendary", img: "⚔️", baseMult: 12.0 },
-  "w_yoru": { id: "w_yoru", name: "Kokuto Yoru", type: "Weapon", rarity: "Mythic", img: "✝️", baseMult: 25.0 },
-  "w_ace": { id: "w_ace", name: "Meito Ace", type: "Weapon", rarity: "EX", img: "🗡️", baseMult: 100.0 },
-  "g_flint": { id: "g_flint", name: "Silex", type: "Gun", rarity: "Common", img: "🔫", baseMult: 1.1 },
-  "g_rifle": { id: "g_rifle", name: "Fusil", type: "Gun", rarity: "Rare", img: "🎯", baseMult: 2.2 },
-  "g_bazooka": { id: "g_bazooka", name: "Bazooka", type: "Gun", rarity: "Epic", img: "🚀", baseMult: 4.5 },
-  "h_bandana": { id: "h_bandana", name: "Bandana", type: "Head", rarity: "Common", img: "🪢", baseMult: 1.1 },
-  "c_marine": { id: "c_marine", name: "Manteau", type: "Chest", rarity: "Rare", img: "🧥", baseMult: 1.5 },
-  "gl_brawler": { id: "gl_brawler", name: "Gants Boxe", type: "Gloves", rarity: "Epic", img: "🥊", baseMult: 3.0 },
-  "b_sanji": { id: "b_sanji", name: "Bottes", type: "Boots", rarity: "Legendary", img: "👢", baseMult: 8.0 },
-  "a_saturn": { id: "a_saturn", name: "Aura Saturn", type: "Accessory", rarity: "Mythic", img: "🕷️", baseMult: 50.0 }
-};
-
-const PETS_DB = {
-  "p_chouchou": { id: "p_chouchou", name: "Chouchou", rarity: "Common", img: "🐕", bonusType: "beli", bonusVal: 0.2, desc: "+20% Beli" },
-  "p_lapin": { id: "p_lapin", name: "Lapin des Neiges", rarity: "Uncommon", img: "🐇", bonusType: "xp", bonusVal: 0.3, desc: "+30% XP" },
-  "p_dugong": { id: "p_dugong", name: "Kung-Fu Dugong", rarity: "Rare", img: "🐢", bonusType: "dmg", bonusVal: 0.5, desc: "+50% Dégâts" },
-  "p_karoo": { id: "p_karoo", name: "Karoo", rarity: "Epic", img: "🦆", bonusType: "speed", bonusVal: 10, desc: "-10ms Délai" },
-  "p_surume": { id: "p_surume", name: "Kraken Surume", rarity: "Mythic", img: "🦑", bonusType: "dmg", bonusVal: 3.0, desc: "+300% Dégâts" },
-  "p_zunisha": { id: "p_zunisha", name: "Zunisha", rarity: "Divine", img: "🐘", bonusType: "all", bonusVal: 2.0, desc: "Stats x2.0" },
-};
-
-const SHIPS = {
-  "sh_barque": { name: "Chaloupe", img: "🛶", cost: 0, clickDelay: 350, extraBeli: 1 },
-  "sh_merry": { name: "Vogue Merry", img: "🐑", cost: 100000, clickDelay: 250, extraBeli: 1.5 },
-  "sh_sunny": { name: "Thousand Sunny", img: "🦁", cost: 2000000, clickDelay: 120, extraBeli: 3.0 }
-};
-
-const RELICS = {
-  "r_cursed": { id: "r_cursed", name: "Kitetsu Maudit", img: "👺", cost: 500000, mult: 4.0, desc: "Dégâts x4 (Pas d'esquive)" }
-};
-
-const REBIRTH_SHOP = {
-  "rb_haki": { id: "rb_haki", name: "Haki Transcendant", desc: "+100% Dégâts Base", cost: 1, type: "dmg", val: 1.0 },
-  "rb_xp": { id: "rb_xp", name: "Volonté Transmise", desc: "+50% Gain XP", cost: 1, type: "xp", val: 0.5 },
-  "rb_luck": { id: "rb_luck", name: "Destin des D.", desc: "+1% Taux EX", cost: 5, type: "exRate", val: 0.01 },
-  "rb_energy": { id: "rb_energy", name: "Énergie Infinie", desc: "+20% Régén Ki", cost: 2, type: "kiRegen", val: 0.2 },
-};
-
-const SEAS = {
-  "East Blue": [
-    { id:"m1", name: "Sbire Pirate", hp: 100, beli: 20, xp: 15, emoji: "🗡️", elem: "STR" }, 
-    { id:"m2", name: "Marine Recrue", hp: 350, beli: 50, xp: 45, emoji: "🛡️", elem: "AGI" }, 
-    { id:"m3", name: "Krieg", hp: 1500, beli: 200, xp: 150, emoji: "⚓", elem: "PHY" }, 
-    { id:"m4", name: "Arlong", hp: 3500, beli: 500, xp: 350, gems: 10, bounty: 1000, emoji: "🦈", elem: "AGI", isBoss: true, drops: [{id: "w_shark", chance: 0.15}] }
-  ],
-  "Grand Line": [
-    { id:"m5", name: "Agent Baroque", hp: 10000, beli: 800, xp: 500, emoji: "🦂", elem: "INT" }, 
-    { id:"m6", name: "Vice-Amiral", hp: 50000, beli: 2500, xp: 1500, emoji: "🎖️", elem: "TEQ" }, 
-    { id:"m7", name: "Pacifista PX", hp: 80000, beli: 4500, xp: 2500, emoji: "🤖", elem: "PHY", drops: [{id: "c_marine", chance: 0.10}] }, 
-    { id:"m8", name: "Crocodile", hp: 150000, beli: 10000, xp: 6000, gems: 50, bounty: 15000, emoji: "🐊", elem: "TEQ", isBoss: true, drops: [{id: "w_shusui", chance: 0.05}] }
-  ],
-  "Nouveau Monde": [
-    { id:"m9", name: "Gifters", hp: 500000, beli: 15000, xp: 8000, emoji: "🐃", elem: "STR" }, 
-    { id:"m10", name: "Samouraï Wano", hp: 1000000, beli: 35000, xp: 20000, emoji: "👹", elem: "AGI", drops: [{id: "w_shusui", chance: 0.05}] }, 
-    { id:"m11", name: "Tobiroppo", hp: 3000000, beli: 85000, xp: 45000, emoji: "🦕", elem: "PHY" }, 
-    { id:"m12", name: "Kaido", hp: 20000000, beli: 500000, xp: 200000, gems: 500, bounty: 500000, emoji: "🐉", elem: "STR", isBoss: true, drops: [{id: "w_yoru", chance: 0.02}] }
-  ]
-};
-
-const CREW_MEMBERS = [
-  { id: "c_coby", name: "Koby", rarity: "Common", img: "🧹", mult: 1.1, elem: "AGI", tags: ["Marine"] },
-  { id: "c_arlong", name: "Arlong", rarity: "Uncommon", img: "🦈", mult: 1.2, elem: "AGI", tags: ["Fishman"] },
-  { id: "c1", name: "Zoro", rarity: "Rare", img: "⚔️", mult: 1.5, elem: "TEQ", tags: ["StrawHat", "Supernova"] },
-  { id: "c2", name: "Nami", rarity: "Epic", img: "🧭", mult: 2.0, elem: "INT", tags: ["StrawHat"] },
-  { id: "c_robin", name: "Robin", rarity: "Epic", img: "🌸", mult: 2.5, elem: "PHY", tags: ["StrawHat"] },
-  { id: "c4", name: "Sanji", rarity: "Legendary", img: "🍳", mult: 3.0, elem: "STR", tags: ["StrawHat"] },
-  { id: "c3", name: "Jinbe", rarity: "Mythic", img: "🥋", mult: 5.0, elem: "AGI", tags: ["StrawHat", "Fishman", "Warlord"] },
-  { id: "c_law", name: "Law", rarity: "Divine", img: "🩺", mult: 8.0, elem: "INT", tags: ["Supernova", "Warlord", "WillOfD"] },
-  { id: "c_luffy", name: "Luffy", rarity: "Divine", img: "🍖", mult: 15.0, elem: "STR", tags: ["StrawHat", "Supernova", "WillOfD"] },
-  { id: "c_kaido", name: "Kaido", rarity: "EX", img: "🐉", mult: 35.0, elem: "PHY", tags: ["Yonko"] },
-  { id: "c_shanks", name: "Shanks", rarity: "EX", img: "🗡️", mult: 50.0, elem: "STR", tags: ["Yonko", "HakiMaster"] },
-  { id: "c_roger", name: "Roger", rarity: "EX", img: "👑", mult: 100.0, elem: "INT", tags: ["PirateKing", "WillOfD", "HakiMaster"] }
-];
-
-const SYNERGIES = [
-  { name: "Monster Trio", req: ["c1", "c4", "c_luffy"], mult: 1.5, desc: "Dégâts x1.5" },
-  { name: "Volonté du D.", tag: "WillOfD", count: 2, mult: 1.3, desc: "Dégâts x1.3" },
-  { name: "Les Empereurs", tag: "Yonko", count: 2, mult: 2.0, desc: "Dégâts x2.0" },
-  { name: "Chapeaux de Paille", tag: "StrawHat", count: 4, mult: 1.4, desc: "Dégâts x1.4" }
-];
-
-// --- CARTES DBL V24 ---
-const DBL_CARDS = [
-  { id: "strike", name: "Frappe", cost: 20, bg: "linear-gradient(180deg, #ef4444, #7f1d1d)", icon: "👊", mult: 1.5 },
-  { id: "blast", name: "Kikoha", cost: 30, bg: "linear-gradient(180deg, #eab308, #a16207)", icon: "💥", mult: 2.0 },
-  { id: "special", name: "Spécial", cost: 50, bg: "linear-gradient(180deg, #3b82f6, #1e3a8a)", icon: "🌊", mult: 4.5 },
-  { id: "green", name: "Éveil", cost: 15, bg: "linear-gradient(180deg, #22c55e, #14532d)", icon: "✨", mult: 0 },
-  { id: "counter", name: "Contre", cost: 30, bg: "linear-gradient(180deg, #64748b, #334155)", icon: "🛡️", mult: 0 }
-];
-
-const BGM_TRACKS = [
-  { id: "t1", name: "Kyouhei (Combat)", file: "/KYOUHEI.mp3" },
-  { id: "t2", name: "Lease (Chill)", file: "/LEASE.mp3" },
-  { id: "t3", name: "Stealthy Night (Menu)", file: "/Stealty Night Shadow.mp3" }
-];
-
-// --- UTILITAIRES ---
-const Format = { 
-  num: (n) => {
-    if (n < 1000) return Math.floor(n).toString();
-    const suffixes = ["", "K", "M", "B", "T", "Qa", "Qi", "Sx", "Sp", "Oc", "No"];
-    const i = Math.floor(Math.log10(n) / 3);
-    if (i >= suffixes.length) return (n / Math.pow(10, 3 * (suffixes.length - 1))).toFixed(2) + suffixes[suffixes.length - 1];
-    return (n / Math.pow(10, i * 3)).toFixed(2) + suffixes[i];
-  }
-};
-
-const getGrade = (val) => {
-  if (val < 100) return { grade: "F", color: "#9ca3af" };
-  if (val < 1000) return { grade: "D", color: "#22c55e" };
-  if (val < 10000) return { grade: "C", color: "#3b82f6" };
-  if (val < 100000) return { grade: "B", color: "#a855f7" };
-  if (val < 1000000) return { grade: "A", color: "#f43f5e" };
-  if (val < 10000000) return { grade: "S", color: "#eab308" };
-  if (val < 100000000) return { grade: "SS", color: "#ef4444" };
-  return { grade: "Z", color: "transparent", isRainbow: true };
-};
-
-const getTitle = (bounty) => {
-  if (bounty < 5000) return { title: "Mousse", color: "#9ca3af" };
-  if (bounty < 50000) return { title: "Pirate", color: "#22c55e" };
-  if (bounty < 200000) return { title: "Supernova", color: "#3b82f6" };
-  if (bounty < 1000000) return { title: "Grand Corsaire", color: "#a855f7" };
-  if (bounty < 10000000) return { title: "Empereur", color: "#ef4444" };
-  return { title: "Roi des Pirates", color: "#eab308" };
-};
-
-// --- INITIAL STATE ---
-const SAVE_KEY = "GrandPieceSaveV24"; 
-const DEFAULT_PLAYER = {
-  profile: { avatar: "🏴‍☠️", username: "Joueur", flag: "🇫🇷", bio: "Le Roi des Pirates!", titleEquipped: "Mousse", frame: "default", totalSummons: 0, totalKills: 0, totalRaids: 0, highestFloor: 0, titles: ["Mousse", "Pirate", "Supernova", "Grand Corsaire", "Empereur", "Roi des Pirates"] },
-  beli: 0, gems: 0, power: 20, bounty: 0,
-  level: { current: 1, xp: 0, max: 100 },
-  stats: { strength: 0, haki: 0, sword: 0, gun: 0, luck: 0, agility: 0 },
-  hakiTree: { observation: 0, armament: 0, kings: 0 }, hakiPoints: 0,
-  shipId: "sh_barque", equippedRelic: null, unlockedRelics: [],
-  rebirth: 0, rebirthCoins: 0, rebirthUpgrades: {},
-  upgrades: { dmg: 0, beli: 0, xp: 0, speed: 0 },
-  equipped: { fruitId: null, weaponId: null, headId: null, chestId: null, glovesId: null, bootsId: null, accId: null },
-  inventory: [], crewList: [], crewSetup: { active: [null, null, null], support: [null, null, null] }, memberFragments: {},
-  pets: { inventory: [], active: [null, null] }, 
-  pity: { legendary: 0, mythic: 0, ex: 0 },
-  sea: "East Blue", lastDaily: 0, lastLogin: Date.now(), weather: "Calme ☀️", logPoseTime: 0,
-  pvpRank: 1000, towerFloor: 1, playerHp: { current: 1000, max: 1000 },
-  settings: { sound: true, music: false, fastMode: false, hideDmg: false, shake: true, skipLowAnim: true, bgmTrack: 0, bgmVolume: 0.4, autoSellRarities: { Common: false, Uncommon: false, Rare: false, Epic: false } },
-  redeemedCodes: []
-};
+import { CombatView } from './components/CombatView';
+import { TrainView } from './components/TrainView';
+import { SummonView } from './components/SummonView';
+import { RosterView } from './components/RosterView';
+import { InventoryView } from './components/InventoryView';
+import { HubView } from './components/HubView';
+import { ProfileModal } from './components/ProfileModal';
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true); 
@@ -212,9 +31,10 @@ export default function App() {
   
   const [player, setPlayer] = useState(DEFAULT_PLAYER);
   const [battle, setBattle] = useState(null);
+  const [activeBounty, setActiveBounty] = useState(null);
   
-  // Combat Action States (DBL V24)
-  const [combatState, setCombatState] = useState({ energy: 100, ultimate: 0, vanishing: 100, isInvincible: false, enemyAttacking: false, stunTime: 0 });
+  // Combat Action States (DBL V23)
+  const [combatState, setCombatState] = useState({ energy: 100, ultimate: 0, vanishing: 100, isInvincible: false, enemyAttacking: false, comboCount: 0 });
   const [combatDeck, setCombatDeck] = useState([]);
   const [dragonBalls, setDragonBalls] = useState(0);
   const [comboCount, setComboCount] = useState(0); // NOUVEAU V24: Compteur de Combo
@@ -232,6 +52,9 @@ export default function App() {
   const [levelUpFlash, setLevelUpFlash] = useState(false);
   const [summonResult, setSummonResult] = useState(null);
   const [banner, setBanner] = useState("Fruit");
+  const [showDailyModal, setShowDailyModal] = useState(false);
+  const [dailyRewardAmount, setDailyRewardAmount] = useState({ gems: 0, beli: 0 });
+
 
   // Modals & Sub-states
   const [showProfile, setShowProfile] = useState(false);
@@ -247,11 +70,30 @@ export default function App() {
   const bgmRef = useRef(null);
 
   // --- INIT & TOASTS ---
+
+
   const addToast = (msg, color="#3b82f6") => {
     const id = Date.now() + Math.random();
     setToasts(prev => [...prev, {id, msg, color}]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   };
+
+  // --- CINÉMATIQUE D'INTRO V23 ---
+
+  useEffect(() => {
+    if (battle && dragonBalls === 0) {
+       // Check for 5* pet equipped
+       const has5StarPet = player.pets.active.some(pInst => {
+           if(!pInst) return false;
+           const petItem = player.pets.inventory.find(i=>i.instanceId===pInst);
+           return petItem && (petItem.stars || 1) >= 5;
+       });
+       if (has5StarPet) {
+           setDragonBalls(1);
+           addToast("Bonus Divin: +1 Dragon Ball", "#f472b6");
+       }
+    }
+  }, [battle]);
 
   useEffect(() => {
     setTimeout(() => setIntroText("ÉVEIL DES FRUITS DU DÉMON..."), 1000);
@@ -334,7 +176,8 @@ export default function App() {
 
   // --- ENVIRONMENT LOOPS ---
   useEffect(() => {
-    if (isLoading) return;
+    const dps = Math.floor(getDmg() * 2);
+  if (isLoading) return;
     const interval = setInterval(() => {
       setMarketPrices({ "f_sube": 150+Math.random()*200, "f_gomu": 1000+Math.random()*2500, "f_mera": 5000+Math.random()*9000, "f_nika": 30000+Math.random()*80000 });
       const weathers = ["Calme ☀️", "Tempête ⚡", "Canicule 🔥", "Blizzard ❄️"];
@@ -370,161 +213,21 @@ export default function App() {
     return () => clearInterval(summonTimer);
   }, [autoSummonConfig.active, player.gems, summonResult, cinematicSummon.active, banner]);
 
-  // --- NOUVEAU V24: PERK FAMILIER EN DÉBUT DE COMBAT ---
-  useEffect(() => {
-    if (battle && combatDeck.length === 0) {
-      let has5StarPet = false;
-      player.pets.active.forEach(pInst => {
-        if(!pInst) return;
-        const petItem = player.pets.inventory.find(i=>i.instanceId===pInst);
-        if(petItem && petItem.stars >= 5) has5StarPet = true;
-      });
-      if (has5StarPet && dragonBalls < 7) {
-        setDragonBalls(prev => prev + 1);
-        addToast("✨ Familier Divin: +1 Dragon Ball !", "#eab308");
-      }
-    }
-  }, [battle]);
+  // --- SYNERGIES & STATS ENGINE V23 ---
 
-  // --- SYNERGIES & STATS ENGINE ---
-  const { synMult, activeSyns } = useMemo(() => {
-    let activeSyns = []; let synMult = 1.0;
-    const allCrewIds = [...player.crewSetup.active, ...player.crewSetup.support].filter(Boolean);
-    const allCrewData = allCrewIds.map(id => CREW_MEMBERS.find(m => m.id === id)).filter(Boolean);
-    const allTags = allCrewData.flatMap(c => c.tags || []);
 
-    SYNERGIES.forEach(syn => {
-      let isMet = false;
-      if (syn.req) isMet = syn.req.every(reqId => allCrewIds.includes(reqId));
-      else if (syn.tag && syn.count) { if (allTags.filter(t => t === syn.tag).length >= syn.count) isMet = true; }
-      if (isMet) { synMult *= syn.mult; activeSyns.push({ name: syn.name, mult: syn.mult }); }
-    });
-    return { synMult, activeSyns };
-  }, [player.crewSetup]);
 
-  const getEquipped = (type) => {
-    let equipId = player.equipped[`${type.toLowerCase()}Id`];
-    if (type === "Accessory") equipId = player.equipped.accId;
-    if (!equipId) return null;
-    const invItem = player.inventory.find(i => i.instanceId === equipId);
-    if (!invItem) return null;
-    const baseData = ITEMS_DB[invItem.itemId] || ITEMS_DB["f_sube"];
-    let v2Multiplier = (invItem.awakenLvl >= 10) ? 2.0 : 1.0;
-    return { ...baseData, ...invItem, totalMult: baseData.baseMult * (1 + ((invItem.awakenLvl||0) * 0.1)) * v2Multiplier };
-  };
 
-  const getDmgMult = () => {
-    let bountyBonus = 1 + (player.bounty / 100000);
-    let hakiArmament = 1 + (player.hakiTree.armament * 0.15);
-    let relicBonus = player.equippedRelic ? RELICS[player.equippedRelic].mult : 1;
-    let incDmg = 1 + (player.upgrades.dmg * 0.1); 
-    let rbDmg = 1 + ((player.rebirthUpgrades.rb_haki || 0) * REBIRTH_SHOP.rb_haki.val);
 
-    let petDmg = 1.0;
-    player.pets.active.forEach(pInst => {
-      if(!pInst) return;
-      const petItem = player.pets.inventory.find(i=>i.instanceId===pInst);
-      if(petItem) {
-        const pDb = PETS_DB[petItem.itemId];
-        const starsMult = 1 + ((petItem.stars || 1) - 1) * 0.5;
-        if(pDb && (pDb.bonusType === 'dmg' || pDb.bonusType === 'all')) petDmg *= (1 + pDb.bonusVal * starsMult);
-      }
-    });
 
-    let mult = (1 + (player.stats.strength * 0.1) + (player.stats.haki * 0.5) + (player.rebirth * 5)) * bountyBonus * hakiArmament * relicBonus * incDmg * petDmg * rbDmg;
-    
-    ["Fruit", "Weapon", "Head", "Chest", "Gloves", "Boots", "Accessory"].forEach(type => {
-      const eq = getEquipped(type);
-      if (eq) {
-        if (type === "Weapon") mult *= (eq.totalMult + (player.stats.sword * 0.2));
-        else mult *= eq.totalMult;
-      }
-    });
-    
-    player.crewSetup.active.forEach(cId => { const member = CREW_MEMBERS.find(m => m.id === cId); if (member) mult *= member.mult; });
-    player.crewSetup.support.forEach(cId => { const member = CREW_MEMBERS.find(m => m.id === cId); if (member) mult *= (member.mult * 0.5); });
-    
-    mult *= synMult;
 
-    if (battle && battle.elem) {
-      const captainId = player.crewSetup.active[0];
-      const capElem = captainId ? CREW_MEMBERS.find(m=>m.id===captainId)?.elem : "STR";
-      mult *= getElementAdvantage(capElem, battle.elem);
-    }
-    return mult;
-  };
 
-  const getDmg = () => Math.floor(player.power * getDmgMult());
-  const getAtkDelay = () => Math.max(50, (SHIPS[player.shipId]?.clickDelay || 350) - ((player.upgrades?.speed || 0) * 5));
-  const dps = Math.floor(getDmg() * (1000 / getAtkDelay()));
 
-  // --- ACTIONS GLOBALES ---
-  const handleRebirth = () => {
-    playClick();
-    const reqLvl = 50 + (player.rebirth * 50);
-    if (player.level.current < reqLvl) return addToast(`Niveau ${reqLvl} requis !`, "#ef4444");
-    if (window.confirm("Renaître ? Vous obtiendrez des Rebirth Coins.")) {
-      const coinsGained = Math.floor(player.level.current / 50);
-      setPlayer(p => ({
-        ...p, rebirth: p.rebirth + 1, rebirthCoins: p.rebirthCoins + coinsGained, level: { current: 1, xp: 0, max: 100 },
-        stats: { strength: 0, haki: 0, sword: 0, gun: 0, luck: 0, agility: 0 }, beli: 0, power: 20
-      }));
-      setBattle(null); setAutoClick(false);
-      setLevelUpFlash(true); setTimeout(() => setLevelUpFlash(false), 1000);
-      addToast(`🌟 REBIRTH ! +${coinsGained} Rebirth Coins.`, "#eab308");
-    }
-  };
 
-  const buyRebirthUpgrade = (id) => {
-    playClick();
-    const upg = REBIRTH_SHOP[id];
-    if(player.rebirthCoins >= upg.cost) {
-      setPlayer(p => ({
-        ...p, rebirthCoins: p.rebirthCoins - upg.cost,
-        rebirthUpgrades: { ...p.rebirthUpgrades, [id]: (p.rebirthUpgrades[id] || 0) + 1 }
-      }));
-      addToast(`Ascension ${upg.name} acquise !`, "#a855f7");
-    } else {
-      addToast("Pas assez de Rebirth Coins.", "#ef4444");
-    }
-  };
 
-  // NOUVEAU V24: FUSION FAMILIERS 5 POUR 1
-  const fusePets = (itemId, stars) => {
-    playClick();
-    if (stars >= 5) return addToast("Ce familier est déjà Divin (5 étoiles) !", "#eab308");
-    const matchingPets = player.pets.inventory.filter(p => p.itemId === itemId && (p.stars || 1) === stars && !player.pets.active.includes(p.instanceId));
-    if (matchingPets.length < 5) return addToast(`Il faut 5 familiers ⭐${stars} identiques ! (${matchingPets.length}/5)`, "#ef4444");
-    
-    const toRemove = matchingPets.slice(0, 5).map(p => p.instanceId);
-    setPlayer(p => {
-      const newInv = p.pets.inventory.filter(pi => !toRemove.includes(pi.instanceId));
-      newInv.push({ instanceId: Date.now() + Math.random().toString(), itemId: itemId, stars: stars + 1 });
-      return { ...p, pets: { ...p.pets, inventory: newInv } };
-    });
-    addToast(`✨ FUSION RÉUSSIE ! Familier ⭐${stars + 1} créé !`, "#22c55e");
-  };
 
-  const trainStat = (statName) => {
-    playClick(); const cost = 100 * Math.pow(1.5, player.stats[statName] || 0);
-    if (player.beli < cost) return addToast(`Fonds insuffisants`, "#ef4444");
-    setPlayer(p => ({ ...p, beli: p.beli - cost, stats: { ...p.stats, [statName]: (p.stats[statName] || 0) + 1 } }));
-  };
 
-  const buyIncrementalUpgrade = (type) => {
-    playClick(); const cost = 10000 * Math.pow(2.5, player.upgrades[type] || 0);
-    if (player.beli < cost) return addToast(`Fonds insuffisants`, "#ef4444");
-    setPlayer(p => ({ ...p, beli: p.beli - cost, upgrades: { ...p.upgrades, [type]: (p.upgrades[type] || 0) + 1 } }));
-  };
-  const buyHakiTalent = (node) => {
-    playClick();
-    if (player.hakiPoints > 0 && player.hakiTree[node] < 5) {
-      setPlayer(p => ({ ...p, hakiPoints: p.hakiPoints - 1, hakiTree: { ...p.hakiTree, [node]: p.hakiTree[node] + 1 } }));
-      addToast(`Haki ${node} amélioré !`, "#a855f7");
-    } else {
-      addToast("Points Haki insuffisants.", "#ef4444");
-    }
-  };
+
 
   const sellCommons = () => {
     playClick(); let kept = []; let sold = 0;
@@ -560,32 +263,17 @@ export default function App() {
   const claimDaily = () => {
     playClick(); const now = Date.now(); const oneDay = 24 * 60 * 60 * 1000;
     if (now - player.lastDaily > oneDay) {
-      setPlayer(p => ({ ...p, gems: p.gems + 100, beli: p.beli + 15000, lastDaily: now }));
-      addToast("🎁 Récompense Quotidienne !", "#eab308");
-    } else addToast(`Revenez demain !`, "#9ca3af");
-  };
-
-  const tradeMarketFruit = (itemId, mode) => {
-    playClick(); const price = marketPrices[itemId] || 500;
-    if (mode === "BUY") {
-      if (player.beli >= price) {
-        setPlayer(p => ({ ...p, beli: p.beli - price, inventory: [...p.inventory, { instanceId: Date.now() + Math.random().toString(), itemId: itemId, awakenLvl: 0 }] }));
-        addToast("Achat effectué !", "#22c55e");
-      } else addToast("Fonds insuffisants.", "#ef4444");
+      const gemsReward = 100 + Math.floor(Math.random() * 50);
+      const beliReward = 15000 * player.level.current;
+      setPlayer(p => ({ ...p, gems: p.gems + gemsReward, beli: p.beli + beliReward, lastDaily: now }));
+      setDailyRewardAmount({ gems: gemsReward, beli: beliReward });
+      setShowDailyModal(true);
     } else {
-      const idx = player.inventory.findIndex(i => i.itemId === itemId);
-      if (idx !== -1) {
-        setPlayer(p => { let inv = [...p.inventory]; inv.splice(idx, 1); return { ...p, beli: p.beli + price, inventory: inv }; });
-        addToast(`Vendu: ${Format.num(price)} ฿`, "#22c55e");
-      } else addToast("Objet non possédé.", "#9ca3af");
+      addToast(`Revenez dans ${Math.ceil((oneDay - (now - player.lastDaily)) / 3600000)} heures !`, "#9ca3af");
     }
   };
 
-  const buyShip = (id, cost) => {
-    playClick();
-    if (player.beli >= cost) { setPlayer(p => ({ ...p, beli: p.beli - cost, shipId: id })); addToast("Nouveau navire !", "#38bdf8"); } 
-    else addToast("Fonds insuffisants.", "#ef4444");
-  };
+
 
   const changeSea = (newSea) => {
     playClick();
@@ -622,90 +310,10 @@ export default function App() {
     addToast("⚡ Auto-Build", "#eab308");
   };
 
-  const handleAutoSell = (pullsArray) => {
-    let kept = []; let soldValue = 0;
-    pullsArray.forEach(p => {
-      const dbItem = p.type === "item" ? ITEMS_DB[p.itemId] : p.type === "pet" ? PETS_DB[p.id] : CREW_MEMBERS.find(c=>c.id===p.id);
-      if (!dbItem) return;
-      if (p.type === "crew" || p.type === "pet") { kept.push(p); return; } 
-      if (player.settings.autoSellRarities[dbItem.rarity]) soldValue += RARITY[dbItem.rarity].val * 500; 
-      else kept.push(p);
-    });
-    if (soldValue > 0) setPlayer(p => ({ ...p, beli: p.beli + soldValue }));
-    return kept;
-  };
+
 
   // --- GACHA ENGINE ---
-  const performSummon = (bannerType, amount, isAuto = false) => {
-    if (!isAuto) playClick();
-    const cost = amount === 1 ? 50 : 450;
-    if (player.gems < cost) { setAutoSummonConfig(c => ({...c, active: false})); if(!isAuto) addToast("Pas assez de gemmes !", "#ef4444"); return; }
-    
-    let pulls = []; let hasEX = false; let maxRarityVal = 0; let bestItemForCine = null;
-    let newLegPity = player.pity.legendary + amount;
-    let newMythicPity = player.pity.mythic + amount;
-    let newEXPity = player.pity.ex + amount;
-    
-    const isCrew = bannerType === "Crew";
-    const isPet = bannerType === "Pet";
-    const poolData = isCrew ? CREW_MEMBERS : isPet ? Object.values(PETS_DB) : Object.values(ITEMS_DB).filter(i => i.type === bannerType || (bannerType==='Head' && ['Head','Chest','Gloves','Boots','Accessory'].includes(i.type)));
 
-    for(let i=0; i<amount; i++) {
-      const rand = Math.random(); let rarity = "Common";
-      if (newEXPity >= 800) { rarity = "EX"; newEXPity = 0; }
-      else if (newMythicPity >= 400) { rarity = "Divine"; newMythicPity = 0; }
-      else if (newLegPity >= 100) { rarity = "Legendary"; newLegPity = 0; }
-      else {
-        if(rand < (0.005 + (player.rebirthUpgrades.rb_luck || 0)*REBIRTH_SHOP.rb_luck.val)) { rarity = "EX"; hasEX = true; newEXPity = 0; }
-        else if(rand < 0.02) { rarity = "Divine"; newMythicPity = 0; } 
-        else if(rand < 0.08) { rarity = "Mythic"; }
-        else if(rand < 0.20) { rarity = "Legendary"; }
-        else if(rand < 0.40) { rarity = "Epic"; }
-        else if(rand < 0.70) { rarity = "Rare"; }
-      }
-      
-      if((isCrew || isPet) && (rarity === "Common" || rarity === "Uncommon")) rarity = "Common"; 
-      const available = poolData.filter(f => f.rarity === rarity || ((isCrew || isPet) && f.rarity === "Rare")); 
-      const chosen = available.length > 0 ? available[Math.floor(Math.random() * available.length)] : poolData[0];
-      
-      if (RARITY[chosen?.rarity]?.val > maxRarityVal) { maxRarityVal = RARITY[chosen.rarity].val; bestItemForCine = chosen; }
-      
-      if(isCrew) pulls.push({ type: "crew", id: chosen.id });
-      else if(isPet) pulls.push({ type: "pet", id: chosen.id, instanceId: Date.now() + Math.random().toString() });
-      else pulls.push({ type: "item", instanceId: Date.now() + Math.random().toString(), itemId: chosen.id, awakenLvl: 0 });
-    }
-
-    setPlayer(p => {
-      let newP = { ...p, gems: p.gems - cost, profile: {...p.profile, totalSummons: p.profile.totalSummons + amount}, pity: { legendary: newLegPity, mythic: newMythicPity, ex: newEXPity } };
-      if (isCrew) {
-        pulls.forEach(pull => { 
-          if(newP.crewList.includes(pull.id)) newP.memberFragments[pull.id] = (newP.memberFragments[pull.id]||0) + 5; 
-          else newP.crewList.push(pull.id); 
-        });
-      } else if (isPet) {
-        pulls.forEach(pull => { newP.pets.inventory.push({ instanceId: pull.instanceId, itemId: pull.id, stars: 1 }); });
-      } else {
-        const keptItems = handleAutoSell(pulls);
-        newP.inventory = [...newP.inventory, ...keptItems];
-      }
-      return newP;
-    });
-    
-    const displayRes = pulls.map(p => isCrew ? CREW_MEMBERS.find(m=>m.id===p.id) : isPet ? PETS_DB[p.id] : { ...ITEMS_DB[p.itemId], instanceId: p.instanceId });
-    
-    if (!isAuto && (hasEX || maxRarityVal >= RARITY.Divine.val)) {
-      setAutoClick(false); setCinematicSummon({ active: true, item: bestItemForCine });
-      setTimeout(() => {
-        setCinematicSummon({ active: false, item: null });
-        setSummonResult(displayRes);
-        setTimeout(() => setSummonResult(null), 5000);
-      }, 4000);
-    } else {
-      if (isAuto && player.settings.skipLowAnim && maxRarityVal < RARITY.Legendary.val) { /* Skip Anim */ } 
-      else { setSummonResult(displayRes); setTimeout(() => setSummonResult(null), isAuto ? 1500 : 5000); }
-    }
-    if (isAuto && maxRarityVal >= RARITY[autoSummonConfig.targetRarity].val) setAutoSummonConfig(c => ({...c, active: false}));
-  };
 
   // ==========================================
   // COMBAT ENGINE V24 (DBL ADVANCED STYLE)
@@ -755,6 +363,7 @@ export default function App() {
             if (curr.enemyAttacking && !curr.isInvincible) { // S'il n'a pas esquivé ou contré
               const bossDmg = Math.floor(player.playerHp.max * 0.10); 
               setPlayer(p => ({...p, playerHp: {...p.playerHp, current: Math.max(0, p.playerHp.current - bossDmg)}}));
+              setCombatState(prev => ({ ...prev, comboCount: 0 })); // Reset combo on damage
               if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), 200); }
               spawnText("DÉGÂTS REÇUS ", bossDmg, false, "#ef4444");
               setComboCount(0); // NOUVEAU V24: L'ennemi te touche, combo brisé !
@@ -767,12 +376,18 @@ export default function App() {
     return () => clearInterval(loop);
   }, [battle, isLoading, combatState.stunTime, player.rebirthUpgrades]);
 
+
   // Player Death Check
   useEffect(() => {
     if(player.playerHp.current <= 0 && battle) {
-      addToast("💀 Vous avez été vaincu !", "#ef4444");
-      setBattle(null); setAutoClick(false); setRaidActive(false); setCombatDeck([]); setComboCount(0);
-      setPlayer(p => ({...p, playerHp: {...p.playerHp, current: p.playerHp.max}, bounty: Math.max(0, Math.floor(p.bounty * 0.95))}));
+      if (gameMode === "pvp") {
+        setPlayer(p => ({...p, pvpRank: Math.max(0, p.pvpRank - 25), playerHp: {...p.playerHp, current: p.playerHp.max}}));
+        addToast("☠️ Défaite... -25 Rang", "#ef4444");
+      } else {
+        setPlayer(p => ({...p, playerHp: {...p.playerHp, current: p.playerHp.max}, bounty: Math.max(0, Math.floor(p.bounty * 0.95))}));
+        addToast("☠️ K.O... Prime réduite.", "#ef4444");
+      }
+      setBattle(null); setAutoClick(false);
     }
   }, [player.playerHp.current, battle]);
 
@@ -796,65 +411,8 @@ export default function App() {
     setTimeout(() => setCombatState(prev => ({...prev, isInvincible: false})), 1000);
   };
 
-  // 4. Executer une carte V24
-  const executeCard = (card, index) => {
-    if (!battle || combatState.energy < card.cost) return;
-    playClick();
+  // 4. Executer une carte
 
-    // Consume Card & Energy
-    setCombatDeck(prev => prev.filter((_, i) => i !== index));
-    if (card.hasDB && dragonBalls < 7) setDragonBalls(prev => prev + 1);
-
-    // NOUVEAU V24: Carte Contre (Counter)
-    if (card.id === "counter") {
-      if (combatState.enemyAttacking) {
-        setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), enemyAttacking: false, stunTime: 2 }));
-        spawnText("CONTRE PARFAIT ! (Stun)", 0, false, "#a855f7");
-        if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), 200); }
-      } else {
-        setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost) }));
-        spawnText("Contre raté...", 0, false, "#9ca3af");
-        setComboCount(0); // Rater le contre brise le combo
-      }
-      return;
-    }
-
-    // Buff "Green Card"
-    if (card.id === "green") {
-      setCombatState(prev => ({ ...prev, energy: Math.min(100, prev.energy - card.cost + 40), vanishing: 100 }));
-      spawnText("ÉVEIL ! KI RESTAURÉ", 0, false, "#22c55e");
-      return;
-    }
-
-    // NOUVEAU V24: Arts Chaining (Combos)
-    let currentCombo = comboCount;
-    let comboMultiplier = 1 + (currentCombo * 0.1); // +10% dégâts par coup de combo
-    
-    if (card.id === "strike" || card.id === "blast") {
-       setComboCount(c => c + 1);
-       if (currentCombo > 0) spawnText(`Combo x${currentCombo + 1}! `, 0, false, "#f97316");
-    } else {
-       setComboCount(0); // Spécial termine le combo
-       comboMultiplier = 1.0; 
-    }
-
-    // Damage Calculation
-    let dmg = getDmg() * card.mult * comboMultiplier;
-    let stun = card.id === "special" ? 2 : 0;
-    
-    if(player.settings.shake) { setShake(true); setTimeout(() => setShake(false), card.id==="special"?300:150); }
-    if(card.id==="strike") { setHitstop(true); setTimeout(() => setHitstop(false), 80); }
-
-    const isCrit = Math.random() < Math.min(0.80, 0.15 + (player.stats.luck * 0.01));
-    const finalDmg = isCrit ? Math.floor(dmg * (3.0 + (player.stats.agility * 0.2))) : Math.floor(dmg);
-
-    setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: stun > 0 ? stun : prev.stunTime }));
-    spawnText(card.icon + " ", finalDmg, isCrit, card.id==="special"?"#3b82f6":card.id==="blast"?"#eab308":"#fff");
-    
-    const newHp = Math.max(0, battle.hp - finalDmg);
-    if (newHp <= 0) handleVictory();
-    else setBattle(prev => ({ ...prev, hp: newHp }));
-  };
 
   // 5. Rising Rush
   const executeRisingRush = () => {
@@ -927,7 +485,11 @@ export default function App() {
     
     setDragonBalls(0); setCombatDeck([]); setComboCount(0); // Reset
     
-    if (gameMode === "tower") {
+    if (battle.name === activeBounty?.name) {
+      setActiveBounty(null);
+      setBattle(null); setAutoClick(false);
+      addToast("👑 PRIME RÉCOLTÉE !", "#eab308");
+    } else if (gameMode === "tower") {
       setPlayer(p => ({...p, towerFloor: p.towerFloor + 1, profile: {...p.profile, highestFloor: Math.max(p.profile.highestFloor, p.towerFloor)}}));
       setBattle(null); setAutoClick(false);
     } else if (gameMode === "pvp") {
@@ -957,6 +519,62 @@ export default function App() {
     setMainTab("combat");
   };
 
+  const { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
+  const { performSummon, handleAutoSell } = useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast);
+  const { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
+
+
+  // Bounty System
+  useEffect(() => {
+    const bountyInterval = setInterval(() => {
+      if (!activeBounty && Math.random() < 0.2) { // 20% chance every minute to spawn a bounty
+        const bountyBosses = [
+          { name: "Katakuri", emoji: "🍩", elem: "STR", hpMult: 100, drops: [{id: "f_mera", chance: 0.1}] },
+          { name: "King", emoji: "🦅", elem: "PHY", hpMult: 150, drops: [{id: "w_shusui", chance: 0.1}] },
+          { name: "Big Mom", emoji: "🍰", elem: "INT", hpMult: 300, drops: [{id: "r_poneglyph", chance: 0.05}] }
+        ];
+        const boss = bountyBosses[Math.floor(Math.random() * bountyBosses.length)];
+        const hp = player.power * boss.hpMult;
+        setActiveBounty({
+          ...boss, hp, maxHp: hp, beli: 50000 * player.level.current, xp: 20000 * player.level.current,
+          gems: 100, isBoss: true, expiresAt: Date.now() + 10 * 60 * 1000 // 10 minutes to fight
+        });
+        addToast("🚨 AVIS DE RECHERCHE: " + boss.name + " est apparu !", "#ef4444");
+      }
+    }, 60000);
+    return () => clearInterval(bountyInterval);
+  }, [activeBounty, player.power, player.level.current]);
+
+  useEffect(() => {
+    if (activeBounty && Date.now() > activeBounty.expiresAt) {
+       setActiveBounty(null);
+       addToast("La prime a expiré...", "#9ca3af");
+    }
+  }, [activeBounty, mainTab]);
+
+
+  useEffect(() => {
+    if (player.expeditions) {
+      let rewards = { beli: 0, gems: 0, count: 0 };
+      let updatedExp = [...player.expeditions];
+      const now = Date.now();
+
+      updatedExp.forEach((exp, i) => {
+        if (exp && now >= exp.endTime) {
+           rewards.count++;
+           rewards.beli += exp.rewards.beli;
+           rewards.gems += exp.rewards.gems;
+           updatedExp[i] = null;
+        }
+      });
+
+      if (rewards.count > 0) {
+        setPlayer(p => ({ ...p, beli: p.beli + rewards.beli, gems: p.gems + rewards.gems, expeditions: updatedExp }));
+        addToast(`${rewards.count} Expéditions terminées ! +${Format.num(rewards.beli)} ฿, +${rewards.gems} 💎`, "#22c55e");
+      }
+    }
+  }, [player.expeditions]);
+
   // --- RENDER CINEMATICS & LOADING ---
   if (cinematicSummon.active && cinematicSummon.item) {
     const item = cinematicSummon.item;
@@ -971,12 +589,23 @@ export default function App() {
           @keyframes flashCine { 0%, 10% { opacity: 1; } 100% { opacity: 0; } }
           @keyframes popItem { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
           @keyframes slideUp { 0% { transform: translateY(50px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
-        `}</style>
+
+        /* V24 PET AURAS */
+        .pet-aura-2 { box-shadow: 0 0 10px rgba(34,197,94,0.5); animation: petPulse 2s infinite; }
+        .pet-aura-3 { box-shadow: 0 0 15px rgba(59,130,246,0.8), inset 0 0 5px rgba(59,130,246,0.5); border: 1px solid #3b82f6 !important; }
+        .pet-aura-4 { box-shadow: 0 0 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(239,68,68,0.5); border: 2px solid #000 !important; animation: hakiPulse 1.5s infinite alternate; }
+        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
+
+        @keyframes petPulse { 0%, 100% { box-shadow: 0 0 5px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 15px rgba(34,197,94,0.7); } }
+        @keyframes hakiPulse { 0% { box-shadow: 0 0 10px rgba(0,0,0,0.9); } 100% { box-shadow: 0 0 25px rgba(239,68,68,0.8); } }
+      `}</style>
         <div className="cine-bg"></div><div className="cine-flash"></div>
         <div className="cine-item">{item.img}</div><div className="cine-text">{item.name.toUpperCase()}</div>
       </div>
     );
   }
+
+
 
   if (isLoading) {
     return (
@@ -997,13 +626,25 @@ export default function App() {
   }
 
   return (
-    <div style={{ background: "#050505", height: "100dvh", width: "100vw", color: "#f8fafc", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+    <div style={{ background: gameMode === "tower" ? "#1e1b4b" : gameMode === "pvp" ? "#450a0a" : player.sea === "Nouveau Monde" ? "#171717" : player.sea === "Grand Line" ? "#0f172a" : "#050505", height: "100dvh", width: "100vw", color: "#f8fafc", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", transition: "background 0.5s" }}>
       {levelUpFlash && <div style={{ position: "absolute", inset: 0, background: "rgba(255, 255, 255, 0.4)", zIndex: 999, pointerEvents: "none", animation: "flashAnim 0.5s ease-out" }} />}
       
       {showUltAnim.active && (
         <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", zIndex: 900, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "ultimateReveal 2s forwards" }}>
           <div style={{ fontSize: "150px", filter: "drop-shadow(0 0 30px #ef4444)" }}>{showUltAnim.char}</div>
           <h1 className="rainbow-text" style={{fontSize:"60px", margin:0, fontStyle: "italic"}}>{showUltAnim.text}</h1>
+        </div>
+      )}
+
+      {showDailyModal && (
+        <div className="modal-overlay ios-tap" onClick={() => setShowDailyModal(false)} style={{ zIndex: 1100 }}>
+          <div className="rbx-panel fade-in" style={{ width: "90%", maxWidth: "300px", border: "2px solid #eab308", textAlign: "center", animation: "ultimateReveal 0.5s forwards" }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: "60px", animation: "divineFloat 2s infinite alternate" }}>🎁</div>
+            <h2 style={{ color: "#eab308", margin: "10px 0" }}>BONUS QUOTIDIEN</h2>
+            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#38bdf8", margin: "10px 0" }}>+{Format.num(dailyRewardAmount.gems)} 💎</div>
+            <div style={{ fontSize: "18px", fontWeight: "bold", color: "#fbbf24", margin: "10px 0" }}>+{Format.num(dailyRewardAmount.beli)} ฿</div>
+            <button onClick={() => setShowDailyModal(false)} className="rbx-btn rbx-btn-gold" style={{ width: "100%", marginTop: "15px" }}>SUPER !</button>
+          </div>
         </div>
       )}
 
@@ -1091,6 +732,19 @@ export default function App() {
         .vanish-ready { background: #fff !important; box-shadow: 0 0 10px #fff; }
         .enemy-attack-warn { position: absolute; top: 10px; right: 25px; font-size: 40px; color: #ef4444; font-weight: 900; filter: drop-shadow(0 0 10px #ef4444); animation: flashWarn 0.2s infinite alternate; }
         @keyframes flashWarn { 0% { opacity: 0.2; transform: scale(0.8); } 100% { opacity: 1; transform: scale(1.2); } }
+
+        .intro-logo { font-size: 80px; animation: popLogo 1s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .intro-title { font-size: 32px; font-weight: 900; text-align: center; margin-top: -10px; opacity: 0; animation: fadeText 1s 0.5s ease-out forwards; background: linear-gradient(180deg, #fff, #9ca3af); -webkit-background-clip: text; color: transparent; text-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .intro-loader-bar { height: 100%; width: 0%; background: #38bdf8; animation: loadBar 3s ease-in-out forwards; box-shadow: 0 0 10px #38bdf8; }
+        @keyframes popLogo { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        @keyframes fadeText { to { opacity: 1; } }
+        @keyframes loadBar { 0% { width: 0%; } 20% { width: 30%; } 80% { width: 80%; } 100% { width: 100%; } }
+
+        /* V24 PET AURAS */
+        .pet-aura-2 { box-shadow: 0 0 10px rgba(34,197,94,0.5); animation: petPulse 2s infinite; }
+        .pet-aura-3 { box-shadow: 0 0 15px rgba(59,130,246,0.8), inset 0 0 5px rgba(59,130,246,0.5); border: 1px solid #3b82f6 !important; }
+        .pet-aura-4 { box-shadow: 0 0 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(239,68,68,0.5); border: 2px solid #000 !important; animation: hakiPulse 1.5s infinite alternate; }
+        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
       `}</style>
 
       {/* --- CARTE DE PROFIL MODAL --- */}
@@ -1171,7 +825,12 @@ export default function App() {
             <div className={`frame-${player.profile.frame}`} style={{ fontSize: "20px", background: "#000", borderRadius: "50%", width:"32px", height:"32px", display:"flex", alignItems:"center", justifyContent:"center" }}>{player.profile.avatar}</div>
             <div>
               <div style={{ fontSize: "13px", fontWeight: "900", color: getTitle(player.bounty).color }}>{player.profile.titleEquipped}</div>
-              <div style={{ fontSize: "10px", color: "#a1a1aa" }}>{player.profile.username} {player.profile.flag}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "2px" }}>
+                <span style={{ fontSize: "10px", fontWeight: "bold", color: "#f8fafc" }}>Niv. {player.level.current}</span>
+                <div style={{ width: "60px", height: "6px", background: "#27272a", borderRadius: "3px", overflow: "hidden" }}>
+                  <div style={{ width: `${(player.level.xp / player.level.max) * 100}%`, background: "#38bdf8", height: "100%" }} />
+                </div>
+              </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: "15px", paddingLeft: "5px" }}>
@@ -1187,709 +846,42 @@ export default function App() {
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "15px", display: "flex", flexDirection: "column", gap: "15px" }}>
-        
-        {/* ================= TAB COMBAT (DBL V24) ================= */}
-        {mainTab === "combat" && (
-          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px", height: "100%" }}>
-            
-            <div style={{ display: "flex", gap: "8px", overflowX: "auto", paddingBottom: "5px" }}>
-              <button onClick={() => { playClick(); setGameMode("idle"); setBattle(null); }} className={`rbx-btn ${gameMode === "idle" ? 'rbx-btn-blue' : ''}`} style={{ flex: "0 0 auto", padding: "8px 12px", fontSize: "11px" }}>🗺️ GRIND</button>
-              <button onClick={() => { playClick(); setGameMode("tower"); setBattle(null); }} className={`rbx-btn ${gameMode === "tower" ? 'rbx-btn-purple' : ''}`} style={{ flex: "0 0 auto", padding: "8px 12px", fontSize: "11px" }}>🏯 TOUR</button>
-              <button onClick={() => { playClick(); setGameMode("pvp"); setBattle(null); }} className={`rbx-btn ${gameMode === "pvp" ? 'rbx-btn-orange' : ''}`} style={{ flex: "0 0 auto", padding: "8px 12px", fontSize: "11px" }}>⚔️ ARENA</button>
-            </div>
-
-            {gameMode === "idle" && (
-              <div className="rbx-panel fade-in" style={{ padding: "15px", display: "flex", flexDirection: "column", flex: 1 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                  <button onClick={() => changeSea(Object.keys(SEAS)[Object.keys(SEAS).indexOf(player.sea) - 1])} disabled={Object.keys(SEAS).indexOf(player.sea) === 0} className="rbx-btn" style={{ padding: "8px" }}>◀</button>
-                  <div style={{textAlign: "center"}}>
-                    <h2 style={{ margin: 0, fontSize: "18px", color: "#eab308", fontWeight: "900", textTransform: "uppercase" }}>{player.sea}</h2>
-                    <span style={{ fontSize: "10px", color: "#a1a1aa" }}>{player.weather}</span>
-                  </div>
-                  <button onClick={() => changeSea(Object.keys(SEAS)[Object.keys(SEAS).indexOf(player.sea) + 1])} disabled={Object.keys(SEAS).indexOf(player.sea) === Object.keys(SEAS).length - 1} className="rbx-btn" style={{ padding: "8px" }}>▶</button>
-                </div>
-
-                {!battle ? (
-                  <div style={{ display: "grid", gap: "10px" }}>
-                    {SEAS[player.sea].map((e, idx) => (
-                      <div key={idx} onClick={() => { playClick(); setBattle({ ...e, hp: e.hp, maxHp: e.hp }); setComboCount(0); }} className="rbx-btn ios-tap" style={{ justifyContent: "space-between", background: "#18181b", padding: "15px", border: `1px solid ${ELEMENTS[e.elem]?.color || '#333'}` }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                          <span style={{ fontSize: "24px" }}>{e.emoji}</span>
-                          <div style={{ textAlign: "left", textTransform: "none", lineHeight: "1.2" }}>
-                            <span style={{ display: "block", color: e.isBoss ? "#ef4444" : "#fff", fontSize: "14px", fontWeight: "900" }}>{e.name}</span>
-                            <span style={{ fontSize: "10px", color: e.isBoss ? "#ef4444" : "#22c55e", fontWeight: "bold" }}>{e.isBoss ? "Boss 💀" : `Élément [${e.elem||'STR'}]`}</span>
-                          </div>
-                        </div>
-                        <span style={{ color: "#22c55e", fontSize: "14px" }}>▶</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="fade-in" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                    
-                    {/* ENNEMY HP BAR */}
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
-                      <span style={{ color: "#22c55e", fontSize: "12px", fontWeight: "bold" }}>Vous: {Format.num(player.playerHp.current)} PV</span>
-                      <span style={{ color: battle.isBoss ? "#ef4444" : ELEMENTS[battle.elem]?.color || "#eab308", fontSize: "12px", fontWeight: "bold" }}>{battle.name} {ELEMENTS[battle.elem]?.icon}</span>
-                    </div>
-                    <div style={{ width: "100%", background: "#27272a", height: "12px", borderRadius: "4px", marginBottom: "10px", position: "relative", overflow: "hidden" }}>
-                      <div style={{ width: `${(battle.hp / battle.maxHp) * 100}%`, background: battle.isBoss?"#ef4444":"#eab308", height: "100%", transition: "0.1s" }} />
-                      <span style={{ position: "absolute", width: "100%", top: 0, left: 0, textAlign: "center", fontSize: "8px", lineHeight: "12px", fontWeight: "900", textShadow: "0 1px 2px #000" }}>{Format.num(battle.hp)} / {Format.num(battle.maxHp)}</span>
-                    </div>
-
-                    {/* ARENA (Swipable for Vanish) */}
-                    <div onClick={executeVanish} className={`${shake ? 'shake-anim' : ''} ${hitstop ? 'hitstop' : ''} ios-tap`} style={{ flex: 1, minHeight: "200px", position: "relative", background: "radial-gradient(circle, #27272a 0%, #18181b 70%)", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", border: battle.isBoss ? "2px solid #7f1d1d" : "2px solid #334155", overflow: "hidden" }}>
-                      <span style={{ fontSize: "100px", filter: combatState.stunTime > 0 ? "grayscale(1) brightness(0.5)" : "none", transition: "0.2s" }}>{battle.emoji}</span>
-                      {floatingTexts.map(t => (<span key={t.id} className="dmg-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
-                      
-                      {/* DBL Elements */}
-                      {combatState.isInvincible && <div style={{position:"absolute", inset:0, border:"4px solid #fff", borderRadius:"16px", opacity:0.8}}></div>}
-                      {combatState.enemyAttacking && <div className="enemy-attack-warn">!</div>}
-                      <div className="vanish-gauge"><div className={`vanish-fill ${combatState.vanishing >= 100 ? 'vanish-ready' : ''}`} style={{ height: `${combatState.vanishing}%` }}></div></div>
-                    </div>
-
-                    {/* DBL BOTTOM UI */}
-                    <div style={{ marginTop: "15px" }}>
-                      {/* KI GAUGE */}
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                        <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#18181b", border: "2px solid #3b82f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "bold" }}>{Math.floor(combatState.energy)}</div>
-                        <div style={{ flex: 1, background: "#18181b", height: "14px", borderRadius: "7px", overflow: "hidden", border: "1px solid #334155" }}>
-                          <div style={{ width: `${combatState.energy}%`, background: "#3b82f6", height: "100%", transition: "0.2s" }}></div>
-                        </div>
-                      </div>
-
-                      {/* DECK & RISING RUSH */}
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
-                        <div style={{ display: "flex", gap: "8px", flex: 1, height: "90px" }}>
-                          {combatDeck.map((card, i) => (
-                            <div key={card.uid} className="dbl-card ios-tap" onClick={() => executeCard(card, i)} style={{ background: card.bg, opacity: combatState.energy < card.cost ? 0.4 : 1 }}>
-                              <span className="dbl-card-cost">{card.cost}</span>
-                              {card.hasDB && <span className="dbl-card-db">⭐</span>}
-                              <span className="dbl-card-icon">{card.icon}</span>
-                              <span style={{ fontSize: "9px", textAlign: "center" }}>{card.name}</span>
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {/* RISING RUSH BUTTON */}
-                        <div onClick={executeRisingRush} className="ios-tap" style={{ width: "70px", height: "70px", borderRadius: "50%", background: dragonBalls >= 7 ? "radial-gradient(circle, #facc15, #a16207)" : "#18181b", border: `2px solid ${dragonBalls >= 7 ? '#fff' : '#334155'}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: dragonBalls >= 7 ? "pointer" : "default", boxShadow: dragonBalls >= 7 ? "0 0 20px #eab308" : "none", opacity: dragonBalls === 0 ? 0.5 : 1 }}>
-                          <span style={{ fontSize: "20px", filter: "drop-shadow(0 0 5px #000)" }}>{dragonBalls >= 7 ? "🐉" : "⭐"}</span>
-                          <span style={{ fontSize: "12px", fontWeight: "900", color: "#fff", textShadow: "0 1px 2px #000" }}>{dragonBalls}/7</span>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", gap: "10px", marginTop: "15px" }}>
-                        <button onClick={() => { playClick(); setAutoClick(!autoClick); }} className={`rbx-btn ${autoClick ? 'rbx-btn-green' : ''}`} style={{ flex: 1, padding: "8px" }}>{autoClick ? "AUTO: ON" : "AUTO FIGHT"}</button>
-                        <button onClick={() => { playClick(); setBattle(null); setAutoClick(false); setCombatDeck([]); }} className="rbx-btn" style={{ background: "#7f1d1d", borderColor: "#450a0a", padding: "8px" }}>FUITE</button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {gameMode === "tower" && (
-              <div className="rbx-panel fade-in" style={{ textAlign: "center", padding: "15px", border: "2px solid #a855f7" }}>
-                <h2 style={{ color: "#a855f7", margin: "0 0 5px", fontSize: "20px", textTransform: "uppercase" }}>Tour d'Impel Down</h2>
-                <p style={{ fontSize: "11px", color: "#cbd5e1", marginBottom: "15px" }}>Étage actuel : <strong>{player.towerFloor}</strong></p>
-                {!battle ? (
-                  <button onClick={() => { 
-                    playClick(); 
-                    const hp = 50000 * Math.pow(1.5, player.towerFloor);
-                    setBattle({ name: `Gardien (Étage ${player.towerFloor})`, emoji: "🧌", elem: "INT", hp: hp, maxHp: hp, beli: hp/10, xp: hp/20, isBoss: true });
-                    setComboCount(0);
-                  }} className="rbx-btn rbx-btn-purple" style={{ width: "100%" }}>AFFRONTER L'ÉTAGE {player.towerFloor}</button>
-                ) : (
-                  <div className="fade-in">
-                    <h3 style={{ color: "#fff", margin: "0 0 10px", fontSize: "20px" }}>{battle.name}</h3>
-                    <div className={`${shake ? 'shake-anim' : ''}`} style={{ position: "relative", width: "100%", height: "180px", background: "radial-gradient(circle, #3b0764 0%, #18181b 70%)", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #7e22ce" }}>
-                      <span style={{ fontSize: "80px" }}>{battle.emoji}</span>
-                      {floatingTexts.map(t => (<span key={t.id} className="dmg-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
-                    </div>
-                    <div style={{ width: "100%", background: "#27272a", height: "20px", borderRadius: "6px", margin: "15px 0", position: "relative", overflow: "hidden" }}>
-                      <div style={{ width: `${(battle.hp / battle.maxHp) * 100}%`, background: "#a855f7", height: "100%" }} />
-                    </div>
-                    <div style={{ display: "flex", gap: "10px" }}>
-                      <button onClick={() => { playClick(); setAutoClick(!autoClick); }} className={`rbx-btn ${autoClick ? 'rbx-btn-green' : ''}`} style={{ flex: 1 }}>AUTO FIGHT</button>
-                      <button onClick={() => { playClick(); setBattle(null); setAutoClick(false); }} className="rbx-btn" style={{ background: "#7f1d1d" }}>FUITE</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ================= TAB TRAIN & UPGRADES ================= */}
-        {mainTab === "train" && (
-          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div style={{ display: "flex", gap: "5px", overflowX: "auto", paddingBottom: "5px" }}>
-              <button onClick={() => { playClick(); setTrainTab("stats"); }} className={`rbx-btn ${trainTab==='stats'?'rbx-btn-blue':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>ENTRAÎNEMENT</button>
-              <button onClick={() => { playClick(); setTrainTab("upgrades"); }} className={`rbx-btn ${trainTab==='upgrades'?'rbx-btn-gold':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>UPGRADES INC.</button>
-              <button onClick={() => { playClick(); setTrainTab("rebirth"); }} className={`rbx-btn ${trainTab==='rebirth'?'rbx-btn-purple':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>ASCENSION</button>
-            </div>
-
-            {trainTab === "stats" && (
-              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                <div className="rbx-panel">
-                  <h3 style={{ marginTop: 0 }}>Statistiques</h3>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-                    {['strength', 'haki', 'sword', 'gun', 'luck', 'agility'].map(s => (
-                      <button key={s} onClick={() => trainStat(s)} className="rbx-btn" style={{ fontSize: "11px", justifyContent: "space-between" }}>
-                        <span>{s.slice(0,3).toUpperCase()}</span><span>+{player.stats[s] || 0}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rbx-panel" style={{ border: "1px solid #a855f7" }}>
-                  <h3 style={{ marginTop: 0 }}>Arbre Haki (Pts: {player.hakiPoints})</h3>
-                  <div style={{ display: "grid", gap: "10px" }}>
-                    {['observation', 'armament', 'kings'].map(node => (
-                      <div key={node} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#18181b", padding: "10px", borderRadius: "8px" }}>
-                        <span style={{ fontSize: "12px" }}>{node.toUpperCase()} ({player.hakiTree[node]}/5)</span>
-                        <button onClick={() => buyHakiTalent(node)} disabled={player.hakiPoints <= 0 || player.hakiTree[node] >= 5} className="rbx-btn rbx-btn-purple" style={{ padding: "6px 12px", fontSize: "11px" }}>UP</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <button onClick={handleRebirth} className="rbx-btn rbx-btn-gold">REBIRTH ★{player.rebirth}</button>
-              </div>
-            )}
-
-            {trainTab === "upgrades" && (
-              <div className="rbx-panel fade-in">
-                <h3 style={{ marginTop: 0, color: "#eab308" }}>Boutique Incrémentale</h3>
-                <div style={{ display: "grid", gap: "10px" }}>
-                  {[
-                    { id: "dmg", name: "Dégâts Globaux (+10%)", color: "#ef4444" },
-                    { id: "beli", name: "Gains Beli (+10%)", color: "#eab308" },
-                    { id: "xp", name: "Gains XP (+10%)", color: "#3b82f6" },
-                    { id: "speed", name: "Vitesse Attaque (-5ms)", color: "#22c55e" }
-                  ].map(upg => {
-                    const lvl = player.upgrades[upg.id] || 0;
-                    const cost = 10000 * Math.pow(2.5, lvl);
-                    return (
-                      <div key={upg.id} style={{ background: "#18181b", padding: "10px", borderRadius: "8px", display: "flex", justifyContent: "space-between", alignItems: "center", border: `1px solid ${upg.color}` }}>
-                        <div><div style={{ fontSize: "12px", fontWeight: "bold", color: upg.color }}>{upg.name}</div><div style={{ fontSize: "10px", color: "#a1a1aa" }}>Niv. {lvl}</div></div>
-                        <button onClick={() => buyIncrementalUpgrade(upg.id)} className="rbx-btn" style={{ padding: "6px 12px", fontSize: "11px", background: "#374151" }}>{Format.num(cost)} ฿</button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {trainTab === "rebirth" && (
-              <div className="rbx-panel fade-in" style={{ border: "2px solid #a855f7" }}>
-                <h3 style={{ marginTop: 0, color: "#a855f7" }}>Ascension Divine</h3>
-                <div style={{ textAlign: "center", marginBottom: "15px" }}>
-                  <span style={{ fontSize: "12px", color: "#cbd5e1" }}>Rebirth Coins:</span>
-                  <div style={{ fontSize: "24px", color: "#eab308", fontWeight: "bold" }}>{player.rebirthCoins} 🪙</div>
-                </div>
-                <div style={{ display: "grid", gap: "10px" }}>
-                  {Object.values(REBIRTH_SHOP).map(upg => {
-                    const owned = player.rebirthUpgrades[upg.id] || 0;
-                    return (
-                      <div key={upg.id} style={{ background: "#18181b", padding: "12px", borderRadius: "8px", border: "1px solid #334155", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <div>
-                          <div style={{ fontSize: "14px", fontWeight: "bold", color: "#fff" }}>{upg.name}</div>
-                          <div style={{ fontSize: "10px", color: "#a855f7" }}>{upg.desc}</div>
-                        </div>
-                        <button onClick={() => buyRebirthUpgrade(upg.id)} className="rbx-btn rbx-btn-purple" style={{ padding: "6px 12px", fontSize: "12px" }}>
-                          {upg.cost} 🪙 ({owned})
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ================= TAB SUMMON (GACHA) ================= */}
-        {mainTab === "summon" && (
-          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div style={{ display: "flex", gap: "5px", overflowX: "auto", paddingBottom: "5px" }}>
-              {["Crew", "Pet", "Fruit", "Weapon", "Armor"].map(b => {
-                const mapBanner = b === "Armor" ? "Head" : b; 
-                return (
-                  <button key={b} onClick={() => { playClick(); setBanner(mapBanner); }} className={`rbx-btn ${banner === mapBanner ? 'rbx-btn-blue' : ''}`} style={{ flex: "0 0 auto", padding: "8px 15px", fontSize: "12px" }}>
-                    {b.toUpperCase()}
-                  </button>
-                )
-              })}
-            </div>
-
-            <div className="rbx-panel" style={{ textAlign: "center" }}>
-              <h2 style={{ color: "#38bdf8", margin: "0 0 15px", fontSize: "20px", fontWeight: "900", letterSpacing: "2px" }}>
-                INVOCATION : {banner === "Head" ? "ÉQUIPEMENT" : banner.toUpperCase()}
-              </h2>
-
-              <div style={{ textAlign: "left", marginBottom: "15px" }}>
-                <span style={{ fontSize: "10px", color: "#a1a1aa", fontWeight: "bold", marginLeft: "5px" }}>Taux (EX: 0.005% | Divine: 0.02%)</span>
-                <div className="showcase-scroll">
-                  {(banner === "Crew" ? CREW_MEMBERS : banner === "Pet" ? Object.values(PETS_DB) : Object.values(ITEMS_DB).filter(item => item.type === banner || (banner==='Head' && ['Chest','Gloves','Boots','Accessory'].includes(item.type))))
-                    .sort((a,b) => (RARITY[b.rarity]?.val||0) - (RARITY[a.rarity]?.val||0)).map((item, i) => {
-                    let animClass = "";
-                    if (item.rarity === "EX") animClass = "ex-shatter";
-                    else if (item.rarity === "Mythic" || item.rarity === "Divine" || item.rarity === "MR") animClass = "mythic-glow";
-                    else if (item.rarity === "Legendary" || item.rarity === "LR") animClass = "legendary-shine";
-                    else if (item.rarity === "Epic" || item.rarity === "UR") animClass = "epic-pulse";
-                    else if (item.rarity === "Rare" || item.rarity === "SSR") animClass = "rare-shine";
-                    else if (item.rarity === "Uncommon" || item.rarity === "SR") animClass = "uncommon-shine";
-                    else animClass = "common-shine";
-
-                    return (
-                      <div key={i} className={animClass} style={{ flex: "0 0 auto", width: "70px", background: "#18181b", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
-                        <div style={{ fontSize: "24px", marginBottom: "5px" }}>{item.img}</div>
-                        <div style={{ fontSize: "8px", color: RARITY[item.rarity]?.color || "#fff", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "15px" }}>
-                <div style={{ background: "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #27272a", textAlign: "left" }}>
-                  <div style={{ fontSize: "9px", color: "#eab308", fontWeight: "bold" }}>PITY LÉGENDAIRE</div>
-                  <div className="pity-bar"><div className="pity-fill" style={{ background: "#eab308", width: `${(player.pity.legendary / 100) * 100}%` }}></div></div>
-                  <div style={{ fontSize: "9px", color: "#9ca3af", marginTop: "2px" }}>{player.pity.legendary % 100} / 100</div>
-                </div>
-                <div style={{ background: "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #27272a", textAlign: "left" }}>
-                  <div style={{ fontSize: "9px", color: "#f472b6", fontWeight: "bold" }}>PITY EX (GARANTI)</div>
-                  <div className="pity-bar"><div className="pity-fill" style={{ background: "#f472b6", width: `${(player.pity.ex / 800) * 100}%` }}></div></div>
-                  <div style={{ fontSize: "9px", color: "#9ca3af", marginTop: "2px" }}>{player.pity.ex} / 800</div>
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: "10px" }}>
-                <button onClick={() => performSummon(banner, 1)} className="rbx-btn rbx-btn-green ios-tap" style={{ flex: 1, flexDirection: "column", padding: "12px 0", opacity: autoSummonConfig.active ? 0.5 : 1, pointerEvents: autoSummonConfig.active ? 'none' : 'auto' }}>
-                  <span style={{ fontSize: "14px" }}>PULL x1</span>
-                  <span style={{ fontSize: "11px", display: "flex", alignItems: "center", gap: "5px", marginTop: "4px" }}>💎 50</span>
-                </button>
-                <button onClick={() => performSummon(banner, 10)} className="rbx-btn rbx-btn-blue ios-tap" style={{ flex: 1, flexDirection: "column", padding: "12px 0", opacity: autoSummonConfig.active ? 0.5 : 1, pointerEvents: autoSummonConfig.active ? 'none' : 'auto' }}>
-                  <span style={{ fontSize: "14px" }}>PULL x10</span>
-                  <span style={{ fontSize: "11px", display: "flex", alignItems: "center", gap: "5px", marginTop: "4px" }}>💎 450</span>
-                </button>
-              </div>
-
-              {summonResult && !autoSummonConfig.active && (
-                <div className="fade-in" style={{ marginTop: "20px", background: "#09090b", padding: "15px", borderRadius: "12px", border: "1px solid #27272a" }}>
-                  <h3 style={{ margin: "0 0 10px", fontSize: "14px", color: "#fff", textAlign: "left" }}>Nouveaux Objets :</h3>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
-                    {summonResult.map((item, i) => {
-                      let animClass = ""; let scale = 1;
-                      if (item.rarity === "EX") { animClass = "ex-shatter"; scale = 1.3; }
-                      else if (item.rarity === "Mythic" || item.rarity === "Divine" || item.rarity === "MR") { animClass = "mythic-glow"; scale = 1.1; }
-                      else if (item.rarity === "Legendary" || item.rarity === "LR") { animClass = "legendary-shine"; scale = 1.05; }
-                      else if (item.rarity === "Epic" || item.rarity === "UR") { animClass = "epic-pulse"; }
-                      else if (item.rarity === "Rare" || item.rarity === "SSR") { animClass = "rare-shine"; }
-                      else if (item.rarity === "Uncommon" || item.rarity === "SR") { animClass = "uncommon-shine"; }
-                      else { animClass = "common-shine"; }
-
-                      return (
-                        <div key={i} className={`fade-in ${animClass}`} style={{ animationDelay: `${i * 0.05}s`, background: "#18181b", borderRadius: "8px", padding: "8px", textAlign: "center", width: "60px", transform: `scale(${scale})`, transition: "0.2s", zIndex: scale > 1 ? 10 : 1 }}>
-                          {item.rarity === "EX" && <div className="rainbow-text" style={{fontSize: "7px", position: "absolute", top: "-12px", left: "50%", transform: "translateX(-50%)"}}>EX!</div>}
-                          <div style={{ fontSize: "24px" }}>{item.img}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ================= TAB ROSTER (ÉQUIPAGE & PETS) ================= */}
-        {mainTab === "roster" && (
-          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            
-            <div style={{ display: "flex", gap: "10px" }}>
-              <button onClick={() => { playClick(); setRosterTab("crew"); }} className={`rbx-btn ${rosterTab==='crew'?'rbx-btn-blue':''}`} style={{flex:1, padding:"8px", fontSize:"10px"}}>ÉQUIPAGE</button>
-              <button onClick={() => { playClick(); setRosterTab("pets"); }} className={`rbx-btn ${rosterTab==='pets'?'rbx-btn-green':''}`} style={{flex:1, padding:"8px", fontSize:"10px"}}>FAMILIERS (PETS)</button>
-            </div>
-
-            {rosterTab === "crew" && (
-              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                {activeSyns.length > 0 && (
-                  <div className="rbx-panel pulseEpic" style={{ padding: "10px", background: "linear-gradient(90deg, #18181b, #3b0764)", border: "1px solid #a855f7", textAlign: "center" }}>
-                    <span style={{ fontSize: "11px", color: "#c084fc", fontWeight: "bold", textTransform: "uppercase" }}>Synergies Actives :</span>
-                    <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", justifyContent: "center", marginTop: "5px" }}>
-                      {activeSyns.map((syn, i) => (
-                        <span key={i} style={{ background: "rgba(168, 85, 247, 0.2)", padding: "2px 6px", borderRadius: "4px", fontSize: "10px", color: "#eab308", border: "1px solid #a855f7" }}>{syn.name} (x{syn.mult})</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="rbx-panel">
-                  <h3 style={{ margin: "0 0 15px", color: "#38bdf8", fontSize: "16px", textTransform: "uppercase" }}>Formation</h3>
-                  
-                  <div style={{ marginBottom: "15px" }}>
-                    <div style={{ fontSize: "11px", color: "#a1a1aa", marginBottom: "5px", fontWeight: "bold" }}>⚔️ COMBATTANTS ACTIFS (Bonus 100%)</div>
-                    <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
-                      {[0, 1, 2].map(i => {
-                        const id = player.crewSetup.active[i];
-                        const char = id ? CREW_MEMBERS.find(m => m.id === id) : null;
-                        const isSelected = crewSelectSlot?.type === 'active' && crewSelectSlot?.index === i;
-                        return (
-                          <div key={`act_${i}`} onClick={() => { playClick(); setCrewSelectSlot({type: 'active', index: i}); }} style={{ flex: 1, height: "70px", background: "#18181b", border: isSelected ? "2px solid #38bdf8" : char ? `1px solid ${RARITY[char.rarity]?.color || '#555'}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
-                            <span style={{ fontSize: "24px" }}>{char ? char.img : "+"}</span>
-                            {char && <span style={{ fontSize: "9px", color: RARITY[char.rarity]?.color, fontWeight: "bold", position: "absolute", bottom: "2px" }}>{char.rarity}</span>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ fontSize: "11px", color: "#a1a1aa", marginBottom: "5px", fontWeight: "bold" }}>🛡️ SUPPORTS PASSIFS (Bonus 50%)</div>
-                    <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
-                      {[0, 1, 2].map(i => {
-                        const id = player.crewSetup.support[i];
-                        const char = id ? CREW_MEMBERS.find(m => m.id === id) : null;
-                        const isSelected = crewSelectSlot?.type === 'support' && crewSelectSlot?.index === i;
-                        return (
-                          <div key={`sup_${i}`} onClick={() => { playClick(); setCrewSelectSlot({type: 'support', index: i}); }} style={{ flex: 1, height: "60px", background: "#09090b", border: isSelected ? "2px solid #22c55e" : char ? `1px solid ${RARITY[char.rarity]?.color || '#555'}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.8, position: "relative" }}>
-                            <span style={{ fontSize: "20px" }}>{char ? char.img : "+"}</span>
-                            {char && <span style={{ fontSize: "8px", color: RARITY[char.rarity]?.color, fontWeight: "bold", position: "absolute", bottom: "2px" }}>{char.rarity}</span>}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                {crewSelectSlot && (
-                  <div className="rbx-panel fade-in" style={{ border: `2px solid ${crewSelectSlot.type === 'active' ? '#38bdf8' : '#22c55e'}` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                      <h4 style={{ margin: 0, color: "#fff" }}>Affecter au Slot {crewSelectSlot.index + 1}</h4>
-                      <button onClick={() => { playClick(); setCrewSelectSlot(null); }} className="rbx-btn" style={{ padding: "4px 8px", fontSize: "10px" }}>FERMER</button>
-                    </div>
-                    
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "200px", overflowY: "auto", paddingRight: "5px" }}>
-                      <div onClick={() => { playClick(); setPlayer(p => { let n = { active: [...p.crewSetup.active], support: [...p.crewSetup.support] }; n[crewSelectSlot.type][crewSelectSlot.index] = null; return {...p, crewSetup: n}; }); setCrewSelectSlot(null); }} style={{ background: "#7f1d1d", padding: "10px", borderRadius: "8px", textAlign: "center", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                        RETIRER
-                      </div>
-                      {player.crewList.map(id => {
-                        const char = CREW_MEMBERS.find(c=>c.id===id);
-                        if(!char) return null;
-                        const isEq = player.crewSetup.active.includes(id) || player.crewSetup.support.includes(id);
-                        return (
-                          <div key={id} onClick={() => {
-                            if (!isEq) {
-                              playClick();
-                              setPlayer(p => { let n = { active: [...p.crewSetup.active], support: [...p.crewSetup.support] }; n[crewSelectSlot.type][crewSelectSlot.index] = id; return {...p, crewSetup: n}; });
-                              setCrewSelectSlot(null);
-                            }
-                          }} className={char.rarity === "EX" ? "ex-shatter" : ""} style={{ background: "#18181b", border: `1px solid ${RARITY[char.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1 }}>
-                            <div style={{ fontSize: "24px", marginBottom: "2px" }}>{char.img}</div>
-                            <div style={{ fontSize: "8px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden" }}>{char.name}</div>
-                            <div style={{ fontSize: "8px", color: "#fbbf24", marginTop: "2px" }}>{player.memberFragments[id]||0} Frag</div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="rbx-panel">
-                   <h3 style={{ margin: "0 0 10px", color: "#eab308", fontSize: "14px" }}>📚 Pokedex Équipage</h3>
-                   <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
-                      {CREW_MEMBERS.map(c => {
-                        const owned = player.crewList.includes(c.id);
-                        return (
-                          <div key={c.id} style={{ width: "30px", height: "30px", background: owned ? "#18181b" : "#000", border: `1px solid ${owned ? RARITY[c.rarity].color : '#333'}`, borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", opacity: owned ? 1 : 0.2, filter: owned ? "none" : "grayscale(100%)" }}>
-                            <span style={{ fontSize: "16px" }}>{c.img}</span>
-                          </div>
-                        )
-                      })}
-                   </div>
-                </div>
-              </div>
-            )}
-
-            {rosterTab === "pets" && (
-              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-                <div className="rbx-panel">
-                  <h3 style={{ margin: "0 0 15px", color: "#22c55e", fontSize: "16px", textTransform: "uppercase" }}>Familiers Actifs</h3>
-                  <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
-                    {[0, 1].map(i => {
-                      const instId = player.pets.active[i];
-                      const petItem = instId ? player.pets.inventory.find(p => p.instanceId === instId) : null;
-                      const petData = petItem ? PETS_DB[petItem.itemId] : null;
-                      const isSelected = petSelectSlot === i;
-                      
-                      let starClass = "";
-                      if(petItem && petItem.stars === 2) starClass = "pet-star-2";
-                      if(petItem && petItem.stars === 3) starClass = "pet-star-3";
-                      if(petItem && petItem.stars === 4) starClass = "pet-star-4";
-                      if(petItem && petItem.stars >= 5) starClass = "pet-star-5";
-
-                      return (
-                        <div key={`pet_${i}`} onClick={() => { playClick(); setPetSelectSlot(i); }} className={starClass} style={{ flex: 1, height: "80px", background: "#18181b", border: isSelected ? "2px solid #22c55e" : petData ? `1px solid ${RARITY[petData.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
-                          {petItem && <span style={{position:"absolute", top:"4px", right:"4px", fontSize:"10px", color:"#eab308", fontWeight:"bold"}}>⭐{petItem.stars||1}</span>}
-                          <span style={{ fontSize: "28px" }}>{petData ? petData.img : "🐾"}</span>
-                          {petData && <span style={{ fontSize: "8px", color: "#a1a1aa", marginTop: "4px", textAlign: "center" }}>{petData.desc} <br/>(+{((petItem?.stars||1)-1)*50}%)</span>}
-                        </div>
-                      )
-                    })}
-                  </div>
-                </div>
-
-                {petSelectSlot !== null && (
-                  <div className="rbx-panel fade-in" style={{ border: `2px solid #22c55e` }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                      <h4 style={{ margin: 0, color: "#fff" }}>Choisir Familier</h4>
-                      <button onClick={() => { playClick(); setPetSelectSlot(null); }} className="rbx-btn" style={{ padding: "4px 8px", fontSize: "10px" }}>FERMER</button>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px", maxHeight: "200px", overflowY: "auto" }}>
-                      <div onClick={() => { playClick(); setPlayer(p => { let n = [...p.pets.active]; n[petSelectSlot] = null; return {...p, pets: {...p.pets, active: n}}; }); setPetSelectSlot(null); }} style={{ background: "#7f1d1d", padding: "10px", borderRadius: "8px", textAlign: "center", fontSize: "10px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-                        RETIRER
-                      </div>
-                      {player.pets.inventory.map(invPet => {
-                        const pData = PETS_DB[invPet.itemId];
-                        if (!pData) return null;
-                        const isEq = player.pets.active.includes(invPet.instanceId);
-                        
-                        let starClass = "";
-                        if(invPet.stars === 2) starClass = "pet-star-2";
-                        if(invPet.stars === 3) starClass = "pet-star-3";
-                        if(invPet.stars === 4) starClass = "pet-star-4";
-                        if(invPet.stars >= 5) starClass = "pet-star-5";
-
-                        return (
-                          <div key={invPet.instanceId} className={starClass} style={{ background: "#18181b", border: `1px solid ${RARITY[pData.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1, position: "relative" }}>
-                            <div onClick={() => {
-                              if (!isEq) {
-                                playClick();
-                                setPlayer(p => { let n = [...p.pets.active]; n[petSelectSlot] = invPet.instanceId; return {...p, pets: {...p.pets, active: n}}; });
-                                setPetSelectSlot(null);
-                              }
-                            }}>
-                              <div style={{ fontSize: "24px" }}>{pData.img}</div>
-                              <div style={{ fontSize: "8px", color: "#fff" }}>{pData.name}</div>
-                              <div style={{ fontSize: "10px", color: "#eab308", fontWeight: "bold" }}>⭐{invPet.stars||1}</div>
-                            </div>
-                            <button onClick={(e) => { e.stopPropagation(); fusePets(invPet.itemId, invPet.stars||1); }} style={{ position: "absolute", top: "-5px", right: "-5px", background: "#3b82f6", border: "none", color: "#fff", fontSize: "10px", borderRadius: "50%", width: "20px", height: "20px", cursor:"pointer" }}>+</button>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ================= TAB INVENTORY ================= */}
-        {mainTab === "inventory" && (
-          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-            <div className="rbx-panel">
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "15px" }}>
-                <h4 style={{ margin: 0, color: "#fff" }}>Équipement RPG</h4>
-                <button onClick={autoEquip} className="rbx-btn rbx-btn-gold" style={{ padding: "6px 12px", fontSize: "10px" }}>⚡ AUTO BUILD</button>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "15px" }}>
-                {["Fruit", "Weapon", "Head", "Chest", "Gloves", "Boots", "Accessory"].map(type => {
-                  let eqId = player.equipped[type === "Fruit" ? "fruitId" : type === "Weapon" ? "weaponId" : type === "Accessory" ? "accId" : `${type.toLowerCase()}Id`];
-                  let item = eqId ? player.inventory.find(i => i.instanceId === eqId) : null;
-                  let baseData = item ? ITEMS_DB[item.itemId] : null;
-
-                  return (
-                    <div key={type} style={{ background: "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #334155", display: "flex", alignItems: "center", gap: "8px" }}>
-                      <div style={{ fontSize: "20px", background: "#09090b", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px", border: `1px solid ${baseData ? RARITY[baseData.rarity].color : '#333'}` }}>
-                        {baseData ? baseData.img : "❓"}
-                      </div>
-                      <div style={{ overflow: "hidden" }}>
-                        <div style={{ fontSize: "8px", color: "#a1a1aa", textTransform: "uppercase" }}>{type}</div>
-                        <div style={{ fontSize: "10px", fontWeight: "bold", color: baseData ? RARITY[baseData.rarity].color : "#555", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>{baseData ? baseData.name : "Vide"}</div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              <div style={{ display: "flex", gap: "5px", marginBottom: "15px" }}>
-                <button onClick={sellCommons} className="rbx-btn" style={{ flex: 1, padding: "8px", fontSize: "9px", background: "#374151" }}>VENDRE COMMUNS</button>
-              </div>
-
-              <h4 style={{ margin: "0 0 10px 0", fontSize: "12px", color: "#a1a1aa", textTransform: "uppercase" }}>Sac à dos (Tap pour équiper)</h4>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "8px" }}>
-                {player.inventory.map((invItem) => {
-                  const item = ITEMS_DB[invItem.itemId];
-                  if (!item) return null;
-                  const isEq = Object.values(player.equipped).includes(invItem.instanceId);
-                  const isV2 = invItem.awakenLvl >= 10;
-                  
-                  return (
-                    <div key={invItem.instanceId} onClick={() => {
-                      playClick();
-                      let equipKey = item.type === "Fruit" ? "fruitId" : item.type === "Weapon" ? "weaponId" : item.type === "Accessory" ? "accId" : `${item.type.toLowerCase()}Id`;
-                      setPlayer(p => ({ ...p, equipped: { ...p.equipped, [equipKey]: invItem.instanceId } }));
-                    }} className={item.rarity === "Mythic" || item.rarity === "Divine" ? "mythic-glow" : item.rarity === "EX" ? "ex-shatter" : ""} style={{ background: "#18181b", border: isEq ? "2px solid #22c55e" : "1px solid #334155", borderRadius: "8px", padding: "8px", textAlign: "center", position: "relative" }}>
-                      {isEq && <span style={{ position: "absolute", bottom: "2px", left: "2px", fontSize: "8px", color: "#22c55e", fontWeight: "900" }}>EQP</span>}
-                      <span style={{ fontSize: "24px", filter: isV2 ? "drop-shadow(0 0 5px rgba(239, 68, 68, 0.8))" : "none" }}>{item.img}</span>
-                      <button onClick={(e) => { e.stopPropagation(); awakenItem(invItem.instanceId); }} style={{ position: "absolute", top: "2px", right: "2px", background: isV2 ? "#ef4444" : "#a855f7", border: "none", color: "#fff", fontSize: "8px", borderRadius: "4px", padding: "2px", zIndex: 10 }}>
-                        {isV2 ? "V2" : `+${invItem.awakenLvl || 0}`}
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ================= TAB HUB MULTI-MENUS ================= */}
-        {mainTab === "hub" && (
-          <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            <div style={{ display: "flex", gap: "5px", overflowX: "auto", paddingBottom: "5px" }}>
-              {["menu", "market", "ships", "relics", "options"].map(st => (
-                <button key={st} onClick={() => { playClick(); setHubTab(st); }} className={`rbx-btn ${hubTab === st ? 'rbx-btn-blue' : ''}`} style={{ flex: "0 0 auto", padding: "8px 12px", fontSize: "10px" }}>
-                  {st === "options" ? "⚙️ SETTINGS" : st.toUpperCase()}
-                </button>
-              ))}
-            </div>
-
-            {hubTab === "menu" && (
-              <div className="rbx-panel fade-in">
-                <button onClick={claimDaily} className="rbx-btn rbx-btn-gold ios-tap" style={{ width: "100%", marginBottom: "15px" }}>🎁 RÉCOMPENSE QUOTIDIENNE</button>
-                <div style={{ border: "1px solid #ef4444", background: "linear-gradient(180deg, #1e1b4b, #450a0a)", padding: "15px", borderRadius: "12px", textAlign: "center" }}>
-                  <h4 style={{ margin: 0, color: "#ef4444" }}>🚨 EGGHEAD LAB RAID</h4>
-                  <p style={{ fontSize: "12px", color: "#cbd5e1" }}>Boss: Saturn | Requis: Niv. 100</p>
-                  <button onClick={() => { playClick(); startRaid(); }} className="rbx-btn rbx-btn-green" style={{ width: "100%" }}>ENTRER DANS LE RAID</button>
-                </div>
-              </div>
-            )}
-
-            {hubTab === "market" && (
-              <div className="rbx-panel fade-in">
-                <h4>📈 Bourse & Marché Noir</h4>
-                {Object.keys(marketPrices).map(id => (
-                  <div key={id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#18181b", padding: "10px", borderRadius: "8px", marginBottom: "8px" }}>
-                    <span>{ITEMS_DB[id].img} {ITEMS_DB[id].name} ({marketPrices[id]} ฿)</span>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      <button onClick={() => tradeMarketFruit(id, "BUY")} className="rbx-btn rbx-btn-green" style={{ padding: "4px 8px", fontSize: "10px" }}>ACH</button>
-                      <button onClick={() => tradeMarketFruit(id, "SELL")} className="rbx-btn" style={{ padding: "4px 8px", fontSize: "10px", background: "#374151" }}>VEN</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {hubTab === "ships" && (
-              <div className="rbx-panel fade-in">
-                <h4>⚓ Chantier Naval</h4>
-                {Object.keys(SHIPS).map(id => (
-                  <div key={id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#18181b", padding: "10px", borderRadius: "8px", marginBottom: "8px" }}>
-                    <span>{SHIPS[id].img} {SHIPS[id].name}</span>
-                    {player.shipId === id ? (
-                      <span style={{ color: "#22c55e", fontSize: "12px" }}>ACTIF</span>
-                    ) : (
-                      <button onClick={() => buyShip(id, SHIPS[id].cost)} disabled={player.beli < SHIPS[id].cost} className="rbx-btn rbx-btn-gold" style={{ padding: "6px 12px", fontSize: "11px" }}>{Format.num(SHIPS[id].cost)} ฿</button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {hubTab === "relics" && (
-              <div className="rbx-panel fade-in">
-                <h4 style={{ color: "#ef4444" }}>💀 Reliques Maudites</h4>
-                {Object.keys(RELICS).map(id => {
-                  const r = RELICS[id];
-                  const isOwned = player.unlockedRelics.includes(id);
-                  const isEq = player.equippedRelic === id;
-                  return (
-                    <div key={id} style={{ background: "#18181b", padding: "12px", borderRadius: "8px", marginBottom: "8px", border: isEq ? "2px solid #ef4444" : "1px solid #334155" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "14px", fontWeight: "bold", color: "#ef4444" }}>{r.img} {r.name}</span>
-                        {isOwned ? (
-                          <button onClick={() => { playClick(); setPlayer(p => ({...p, equippedRelic: isEq ? null : id})); }} className={`rbx-btn ${isEq ? 'rbx-btn-blue' : ''}`} style={{ padding: "4px 8px", fontSize: "10px" }}>{isEq ? "DÉSÉQUIPER" : "ÉQUIPER"}</button>
-                        ) : (
-                          <button onClick={() => { playClick(); if(player.beli >= r.cost) { setPlayer(p => ({...p, beli: p.beli - r.cost, unlockedRelics: [...p.unlockedRelics, id]})); addToast("Relique achetée !", "#eab308"); } else addToast("Fonds insuffisants", "#ef4444"); }} className="rbx-btn rbx-btn-gold" style={{ padding: "4px 8px", fontSize: "10px" }}>{Format.num(r.cost)} ฿</button>
-                        )}
-                      </div>
-                      <div style={{ fontSize: "10px", color: "#a1a1aa", marginTop: "5px" }}>{r.desc}</div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
-            {hubTab === "options" && (
-              <div className="rbx-panel fade-in">
-                <h2 style={{ color: "#fff", margin: "0 0 20px", fontSize: "20px", fontWeight: "900" }}>⚙️ RÉGLAGES</h2>
-                
-                <div style={{ marginBottom: "15px" }}>
-                  <span style={{ fontSize: "13px", color: "#38bdf8", fontWeight: "bold", display: "block", marginBottom: "8px" }}>Code Promo</span>
-                  <div style={{ display: "flex", gap: "10px" }}>
-                    <input type="text" value={promoCode} onChange={(e) => setPromoCode(e.target.value.toUpperCase())} style={{ flex: 1, background: "#09090b", border: "1px solid #27272a", color: "#fff", padding: "10px", borderRadius: "8px", outline: "none", fontSize: "12px" }} placeholder="ex: NEWERA_V21" />
-                    <button onClick={redeemCode} className="rbx-btn rbx-btn-gold" style={{ padding: "10px 15px", fontSize: "11px" }}>VALIDER</button>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#18181b", padding: "12px", borderRadius: "8px", marginBottom: "8px", border: "1px solid #27272a" }}>
-                  <span style={{ fontSize: "14px", fontWeight: "bold", color: "#f8fafc" }}>Sons (SFX)</span>
-                  <button onClick={() => setPlayer(p => ({...p, settings: {...p.settings, sound: !p.settings.sound}}))} className="rbx-btn" style={{ padding: "6px 12px", background: player.settings.sound ? "#22c55e" : "#3f3f46", border: "none", fontSize: "12px" }}>{player.settings.sound ? "ON" : "OFF"}</button>
-                </div>
-                
-                <div style={{ background: "#18181b", padding: "12px", borderRadius: "8px", marginBottom: "8px", border: "1px solid #27272a" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
-                    <span style={{ fontSize: "14px", fontWeight: "bold", color: "#f8fafc" }}>Musique (BGM)</span>
-                    <button onClick={() => setPlayer(p => ({...p, settings: {...p.settings, music: !p.settings.music}}))} className="rbx-btn" style={{ padding: "6px 12px", background: player.settings.music ? "#22c55e" : "#3f3f46", border: "none", fontSize: "12px" }}>{player.settings.music ? "ON" : "OFF"}</button>
-                  </div>
-                  {player.settings.music && (
-                    <div className="fade-in">
-                      <select value={player.settings.bgmTrack || 0} onChange={(e) => setPlayer(p => ({...p, settings: {...p.settings, bgmTrack: parseInt(e.target.value)}}))} style={{ width: "100%", background: "#09090b", color: "#fff", border: "1px solid #334155", padding: "8px", borderRadius: "6px", fontSize: "12px", marginBottom: "10px" }}>
-                        {BGM_TRACKS.map((t, idx) => <option key={t.id} value={idx}>{t.name}</option>)}
-                      </select>
-                      <input type="range" min="0" max="1" step="0.05" value={player.settings.bgmVolume || 0.4} onChange={(e) => setPlayer(p => ({...p, settings: {...p.settings, bgmVolume: parseFloat(e.target.value)}}))} style={{ width: "100%" }} />
-                    </div>
-                  )}
-                </div>
-
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#18181b", padding: "12px", borderRadius: "8px", marginBottom: "8px", border: "1px solid #27272a" }}>
-                  <span style={{ fontSize: "14px", fontWeight: "bold", color: "#f8fafc" }}>Shake Screen (Séismes)</span>
-                  <button onClick={() => setPlayer(p => ({...p, settings: {...p.settings, shake: !p.settings.shake}}))} className="rbx-btn" style={{ padding: "6px 12px", background: player.settings.shake ? "#3b82f6" : "#3f3f46", border: "none", fontSize: "12px" }}>{player.settings.shake ? "ON" : "OFF"}</button>
-                </div>
-
-                <div style={{ background: "#18181b", padding: "12px", borderRadius: "10px", marginBottom: "15px", border: "1px solid #334155" }}>
-                  <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold", display: "block", marginBottom: "5px" }}>🤖 Macro Légale (Tâche de fond)</span>
-                  <button onClick={() => setLegalMacro(m => ({ ...m, active: !m.active, counter: 0 }))} className={`rbx-btn ${legalMacro.active ? 'rbx-btn-green' : 'rbx-btn-blue'}`} style={{ width: "100%", padding: "8px", fontSize: "11px" }}>
-                    {legalMacro.active ? "ARRÊTER LA MACRO" : "ACTIVER LA MACRO"}
-                  </button>
-                </div>
-
-                <button onClick={() => {
-                  if (window.confirm("Voulez-vous vraiment TOUT effacer ? Votre progression sera perdue à jamais.")) { localStorage.removeItem(SAVE_KEY); window.location.reload(); }
-                }} className="rbx-btn ios-tap" style={{ width: "100%", background: "#7f1d1d", borderColor: "#450a0a", fontSize: "12px", marginTop: "20px" }}>⚠️ EFFACER MA SAUVEGARDE</button>
-              </div>
-            )}
-          </div>
-        )}
+        <CombatView
+            mainTab={mainTab} player={player} battle={battle} setBattle={setBattle} combatState={combatState} dps={dps} getDmg={getDmg} getDmgMult={getDmgMult} activeSyns={activeSyns}
+            gameMode={gameMode} setGameMode={setGameMode} playClick={playClick} dragonBalls={dragonBalls} hitstop={hitstop} shake={shake} showUltAnim={showUltAnim}
+            combatDeck={combatDeck} setCombatDeck={setCombatDeck} executeCard={executeCard} executeVanish={executeVanish} executeRisingRush={executeRisingRush}
+            raidWave={raidWave} raidActive={raidActive} floatingTexts={floatingTexts} autoClick={autoClick} setAutoClick={setAutoClick} changeSea={changeSea}
+        />
+        <TrainView
+            mainTab={mainTab} player={player} playClick={playClick} trainTab={trainTab} setTrainTab={setTrainTab}
+            trainStat={trainStat} buyIncrementalUpgrade={buyIncrementalUpgrade} buyHakiTalent={buyHakiTalent} buyRebirthUpgrade={buyRebirthUpgrade} handleRebirth={handleRebirth}
+        />
+        <SummonView
+            mainTab={mainTab} player={player} playClick={playClick} banner={banner} setBanner={setBanner}
+            performSummon={performSummon} autoSummonConfig={autoSummonConfig} setAutoSummonConfig={setAutoSummonConfig} cinematicSummon={cinematicSummon} summonResult={summonResult} setSummonResult={setSummonResult}
+        />
+        <RosterView
+            mainTab={mainTab} player={player} playClick={playClick} rosterTab={rosterTab} setRosterTab={setRosterTab}
+            crewSelectSlot={crewSelectSlot} setCrewSelectSlot={setCrewSelectSlot} setPlayer={setPlayer} fusePets={fusePets} petSelectSlot={petSelectSlot} setPetSelectSlot={setPetSelectSlot}
+        />
+        <InventoryView
+            mainTab={mainTab} player={player} playClick={playClick} sellCommons={sellCommons} setPlayer={setPlayer} getEquipped={getEquipped} awakenItem={awakenItem} autoEquip={autoEquip} forgeItem={forgeItem}
+        />
+        <HubView
+            mainTab={mainTab} player={player} playClick={playClick} hubTab={hubTab} setHubTab={setHubTab}
+            claimDaily={claimDaily} enterRaid={enterRaid} changeSea={changeSea} marketPrices={marketPrices}
+            autoSummonConfig={autoSummonConfig} setAutoSummonConfig={setAutoSummonConfig} setPlayer={setPlayer} buyShip={buyShip} legalMacro={legalMacro} setLegalMacro={setLegalMacro}
+            startRaid={startRaid} tradeMarketFruit={tradeMarketFruit} redeemCode={redeemCode} promoCode={promoCode} setPromoCode={setPromoCode} activeBounty={activeBounty} setBattle={setBattle} setGameMode={setGameMode} setMainTab={setMainTab}
+        />
       </div>
 
       {/* --- BOTTOM NAVIGATION BAR V24 --- */}
       <div style={{ background: "rgba(9, 9, 11, 0.98)", borderTop: "1px solid #27272a", display: "flex", justifyContent: "space-between", padding: "10px 10px calc(env(safe-area-inset-bottom) + 15px)", zIndex: 100 }}>
-        {[
-          { id: "combat", icon: "⚔️", label: "COMBAT" },
-          { id: "train", icon: "💪", label: "TRAIN" },
-          { id: "summon", icon: "✨", label: "GACHA" },
-          { id: "roster", icon: "⚓", label: "ÉQUIPE" },
-          { id: "inventory", icon: "🎒", label: "SAC" },
-          { id: "hub", icon: "🧭", label: "MENU" }
-        ].map(t => (
-          <div key={t.id} onClick={() => { playClick(); setMainTab(t.id); }} className="ios-tap" style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "4px 0", opacity: mainTab === t.id ? 1 : 0.4, transition: "0.2s" }}>
-            <span style={{ fontSize: "20px", filter: mainTab === t.id ? "drop-shadow(0 0 8px rgba(56,189,248,0.8))" : "none" }}>{t.icon}</span>
-            <span style={{ fontSize: "8px", fontWeight: "900", color: mainTab === t.id ? "#38bdf8" : "#9ca3af" }}>{t.label}</span>
+        {[ { id: "combat", icon: "⚔️", label: "COMBAT" }, { id: "train", icon: "💪", label: "TRAIN" }, { id: "summon", icon: "✨", label: "GACHA" }, { id: "roster", icon: "⚓", label: "ÉQUIPE" }, { id: "inventory", icon: "🎒", label: "SAC" }, { id: "hub", icon: "🧭", label: "MENU" } ].map(t => (
+          <div key={t.id} onClick={() => { playClick(); setMainTab(t.id); }} className="ios-tap" style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "4px 0", opacity: mainTab === t.id ? 1 : 0.4, transition: "0.2s" }}>
+            {t.id === "hub" && (Date.now() - player.lastDaily > 24 * 60 * 60 * 1000) && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
+            {t.id === "train" && (player.beli >= 10000 * Math.pow(2.5, player.upgrades.dmg || 0)) && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
+            <span style={{ fontSize: "20px", filter: mainTab === t.id ? "drop-shadow(0 0 8px rgba(56,189,248,0.8))" : "none" }}>{t.icon}</span><span style={{ fontSize: "8px", fontWeight: "900", color: mainTab === t.id ? "#38bdf8" : "#9ca3af" }}>{t.label}</span>
           </div>
         ))}
       </div>

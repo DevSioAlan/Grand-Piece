@@ -1,12 +1,12 @@
 
 import React from 'react';
-import { Format, RARITY, getGrade, getTitle, REBIRTH_SHOP, SAVE_KEY } from '../data/constants';
+import { Format, RARITY, getGrade, getTitle, REBIRTH_SHOP, SAVE_KEY, ELEMENTS } from '../data/constants';
 import { ITEMS_DB, SHIPS, RELICS } from '../data/items';
 import { PETS_DB } from '../data/pets';
-import { CREW_MEMBERS, BGM_TRACKS } from '../data/combat';
+import { SEAS, CREW_MEMBERS, BGM_TRACKS } from '../data/combat';
 
 export function CombatView({
-    mainTab, player, battle, setBattle, combatState, dps, getDmg, getDmgMult, activeSyns, gameMode, setGameMode, playClick, dragonBalls, hitstop, shake, showUltAnim, combatDeck, setCombatDeck, executeCard, executeVanish, executeRisingRush, raidWave, raidActive, floatingTexts, autoClick, setAutoClick, getGrade, ELEMENTS, Format
+    mainTab, player, battle, setBattle, combatState, dps, getDmg, getDmgMult, activeSyns, gameMode, setGameMode, playClick, dragonBalls, hitstop, shake, showUltAnim, combatDeck, setCombatDeck, executeCard, executeVanish, executeRisingRush, raidWave, raidActive, floatingTexts, autoClick, setAutoClick, changeSea
 }) {
     if (mainTab !== "combat") return null;
     return (
@@ -63,6 +63,12 @@ export function CombatView({
                       {floatingTexts.map(t => (<span key={t.id} className="dmg-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
 
                       {/* DBL Elements */}
+                      {combatState.comboCount > 1 && (
+                          <div style={{ position: "absolute", top: "10px", left: "10px", fontSize: "20px", fontWeight: "900", color: "#eab308", filter: "drop-shadow(0 0 10px #eab308)", animation: "fadeIn 0.2s" }}>
+                              {combatState.comboCount} COMBO
+                          </div>
+                      )}
+
                       {combatState.isInvincible && <div style={{position:"absolute", inset:0, border:"4px solid #fff", borderRadius:"16px", opacity:0.8}}></div>}
                       {combatState.enemyAttacking && <div className="enemy-attack-warn">!</div>}
                       <div className="vanish-gauge"><div className={`vanish-fill ${combatState.vanishing >= 100 ? 'vanish-ready' : ''}`} style={{ height: `${combatState.vanishing}%` }}></div></div>
@@ -82,7 +88,7 @@ export function CombatView({
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
                         <div style={{ display: "flex", gap: "8px", flex: 1, height: "90px" }}>
                           {combatDeck.map((card, i) => (
-                            <div key={card.uid} className="dbl-card ios-tap" onClick={() => executeCard(card, i)} style={{ background: card.bg, opacity: combatState.energy < card.cost ? 0.4 : 1 }}>
+                            <div key={card.uid} className="dbl-card ios-tap" onClick={() => executeCard(card, i, combatState)} style={{ background: card.bg, opacity: combatState.energy < card.cost ? 0.4 : 1 }}>
                               <span className="dbl-card-cost">{card.cost}</span>
                               {card.hasDB && <span className="dbl-card-db">⭐</span>}
                               <span className="dbl-card-icon">{card.icon}</span>
@@ -116,7 +122,18 @@ export function CombatView({
                   <button onClick={() => {
                     playClick();
                     const hp = 50000 * Math.pow(1.5, player.towerFloor);
-                    setBattle({ name: `Gardien (Étage ${player.towerFloor})`, emoji: "🧌", elem: "INT", hp: hp, maxHp: hp, beli: hp/10, xp: hp/20, isBoss: true });
+                    const isBossFloor = player.towerFloor % 10 === 0;
+                    setBattle({
+                      name: isBossFloor ? `Boss de Palier (Étage ${player.towerFloor})` : `Gardien (Étage ${player.towerFloor})`,
+                      emoji: isBossFloor ? "👹" : "🧌",
+                      elem: "INT",
+                      hp: isBossFloor ? hp * 2 : hp,
+                      maxHp: isBossFloor ? hp * 2 : hp,
+                      beli: hp/10,
+                      xp: hp/20,
+                      isBoss: true,
+                      drops: isBossFloor ? [{id: 'w_shark', chance: 1}] : []
+                    });
                   }} className="rbx-btn rbx-btn-purple" style={{ width: "100%" }}>AFFRONTER L'ÉTAGE {player.towerFloor}</button>
                 ) : (
                   <div className="fade-in">
@@ -136,6 +153,39 @@ export function CombatView({
                 )}
               </div>
             )}
-          </div>
+
+            {gameMode === "pvp" && (
+              <div className="rbx-panel fade-in" style={{ textAlign: "center", padding: "15px", border: "2px solid #ef4444" }}>
+                <h2 style={{ color: "#ef4444", margin: "0 0 5px", fontSize: "20px", textTransform: "uppercase" }}>Arène PvP Asynchrone</h2>
+                <p style={{ fontSize: "11px", color: "#cbd5e1", marginBottom: "15px" }}>Rang actuel : <strong>{player.pvpRank}</strong></p>
+                {!battle ? (
+                  <button onClick={() => {
+                    playClick();
+                    const enemyPower = player.power * (0.85 + Math.random() * 0.3);
+                    const enemyHp = Math.floor(enemyPower * 50);
+                    const names = ["Dread", "Skull", "Bones", "Iron", "Storm", "Black"];
+                    const name = names[Math.floor(Math.random()*names.length)] + " Pirate";
+                    setBattle({ name: name, emoji: "👤", elem: "PHY", hp: enemyHp, maxHp: enemyHp, beli: 5000, xp: 2000, isBoss: false });
+                  }} className="rbx-btn rbx-btn-orange" style={{ width: "100%" }}>CHERCHER UN ADVERSAIRE</button>
+                ) : (
+                  <div className="fade-in">
+                    <h3 style={{ color: "#fff", margin: "0 0 10px", fontSize: "20px" }}>{battle.name}</h3>
+                    <div className={`${shake ? 'shake-anim' : ''}`} style={{ position: "relative", width: "100%", height: "180px", background: "radial-gradient(circle, #7f1d1d 0%, #18181b 70%)", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid #dc2626" }}>
+                      <span style={{ fontSize: "80px" }}>{battle.emoji}</span>
+                      {floatingTexts.map(t => (<span key={t.id} className="dmg-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
+                    </div>
+                    <div style={{ width: "100%", background: "#27272a", height: "20px", borderRadius: "6px", margin: "15px 0", position: "relative", overflow: "hidden" }}>
+                      <div style={{ width: `${(battle.hp / battle.maxHp) * 100}%`, background: "#ef4444", height: "100%" }} />
+                    </div>
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <button onClick={() => { playClick(); setAutoClick(!autoClick); }} className={`rbx-btn ${autoClick ? 'rbx-btn-green' : ''}`} style={{ flex: 1 }}>AUTO FIGHT</button>
+                      <button onClick={() => { playClick(); setBattle(null); setAutoClick(false); setPlayer(p => ({...p, pvpRank: Math.max(0, p.pvpRank - 15)})); }} className="rbx-btn" style={{ background: "#7f1d1d" }}>FUITE</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+                      </div>
     );
 }

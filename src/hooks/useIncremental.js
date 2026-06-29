@@ -1,4 +1,6 @@
+
 import { REBIRTH_SHOP } from "../data/constants";
+import { ITEMS_DB } from "../data/items";
 
 export function useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick) {
 
@@ -60,5 +62,49 @@ export function useIncremental(player, setPlayer, setBattle, setAutoClick, setLe
     else addToast("Fonds insuffisants.", "#ef4444");
   };
 
-  return { handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip };
+  const fusePets = (itemId, stars) => {
+    playClick();
+    if (stars >= 5) return addToast("Ce familier est déjà au niveau maximum (5⭐) !", "#ef4444");
+
+    const matchingPets = player.pets.inventory.filter(p => p.itemId === itemId && (p.stars || 1) === stars && !player.pets.active.includes(p.instanceId));
+    if (matchingPets.length < 5) return addToast("Il faut 5 familiers identiques (non équipés) !", "#ef4444");
+
+    const toRemove = matchingPets.slice(0, 5).map(p => p.instanceId);
+    setPlayer(p => {
+      const newInv = p.pets.inventory.filter(pi => !toRemove.includes(pi.instanceId));
+      newInv.push({ instanceId: Date.now() + Math.random().toString(), itemId: itemId, stars: stars + 1 });
+      return { ...p, pets: { ...p.pets, inventory: newInv } };
+    });
+    addToast(`Fusion Réussie ! Familier ⭐${stars + 1} créé !`, "#22c55e");
+  };
+
+  const forgeItem = (itemId) => {
+    playClick();
+    const itemData = ITEMS_DB[itemId];
+    if (!itemData) return;
+
+    const copies = player.inventory.filter(i => i.itemId === itemId && i.awakenLvl === 0 && !Object.values(player.equipped).includes(i.instanceId));
+    if (copies.length < 3) return addToast("Il faut 3 copies (non-équipées, non-éveillées) de " + itemData.name, "#ef4444");
+
+    const rarityLevels = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Divine", "EX"];
+    const currentRarityIdx = rarityLevels.indexOf(itemData.rarity);
+    if (currentRarityIdx === -1 || currentRarityIdx >= rarityLevels.length - 1) return addToast("Cet objet a atteint la rareté maximale !", "#eab308");
+
+    const targetRarity = rarityLevels[currentRarityIdx + 1];
+    const possibleTargets = Object.values(ITEMS_DB).filter(i => i.type === itemData.type && i.rarity === targetRarity);
+    if (possibleTargets.length === 0) return addToast("Aucun objet supérieur disponible dans cette catégorie.", "#9ca3af");
+
+    const targetItem = possibleTargets[Math.floor(Math.random() * possibleTargets.length)];
+    const toRemove = copies.slice(0, 3).map(c => c.instanceId);
+
+    setPlayer(p => {
+       const newInv = p.inventory.filter(i => !toRemove.includes(i.instanceId));
+       newInv.push({ instanceId: Date.now() + Math.random().toString(), itemId: targetItem.id, awakenLvl: 0 });
+       return { ...p, inventory: newInv };
+    });
+
+    addToast("Forge Réussie: " + targetItem.name + " (" + targetRarity + ") !", "#a855f7");
+  };
+
+  return { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip };
 }

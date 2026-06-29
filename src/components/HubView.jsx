@@ -6,16 +6,31 @@ import { PETS_DB } from '../data/pets';
 import { CREW_MEMBERS, BGM_TRACKS } from '../data/combat';
 
 export function HubView({
-    mainTab, player, playClick, hubTab, setHubTab, claimDaily, enterRaid, changeSea, marketPrices, autoSummonConfig, setAutoSummonConfig, setPlayer, buyShip, legalMacro, setLegalMacro, startRaid, tradeMarketFruit, redeemCode
+    mainTab, player, playClick, hubTab, setHubTab, claimDaily, enterRaid, changeSea, marketPrices, autoSummonConfig, setAutoSummonConfig, setPlayer, buyShip, legalMacro, setLegalMacro, startRaid, tradeMarketFruit, redeemCode, promoCode, setPromoCode, activeBounty, setBattle, setGameMode, setMainTab
 }) {
     if (mainTab !== "hub") return null;
     return (
         <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div style={{ display: "flex", gap: "5px", overflowX: "auto", paddingBottom: "5px" }}>
-              {["menu", "market", "ships", "relics", "options"].map(st => (
+              {["menu", "market", "expeditions", "ships", "relics", "options"].map(st => (
                 <button key={st} onClick={() => { playClick(); setHubTab(st); }} className={`rbx-btn ${hubTab === st ? 'rbx-btn-blue' : ''}`} style={{ flex: "0 0 auto", padding: "8px 12px", fontSize: "10px" }}>{st === "options" ? "⚙️ SETTINGS" : st.toUpperCase()}</button>
               ))}
             </div>
+
+
+            {hubTab === "menu" && activeBounty && (
+              <div className="rbx-panel fade-in" style={{ border: "2px solid #ef4444", background: "linear-gradient(180deg, #450a0a, #18181b)", padding: "15px", borderRadius: "12px", textAlign: "center", marginBottom: "15px", position: "relative" }}>
+                <span style={{ position: "absolute", top: "-10px", left: "50%", transform: "translateX(-50%)", background: "#ef4444", padding: "2px 10px", borderRadius: "10px", fontSize: "12px", fontWeight: "900" }}>WANTED</span>
+                <div style={{ fontSize: "50px" }}>{activeBounty.emoji}</div>
+                <h4 style={{ margin: "5px 0", color: "#fff", fontSize: "20px" }}>{activeBounty.name}</h4>
+                <div style={{ display: "flex", justifyContent: "center", gap: "15px", marginBottom: "10px" }}>
+                  <span style={{ color: "#fbbf24", fontWeight: "bold", fontSize: "12px" }}>{Format.num(activeBounty.beli)} ฿</span>
+                  <span style={{ color: "#38bdf8", fontWeight: "bold", fontSize: "12px" }}>{activeBounty.gems} 💎</span>
+                </div>
+                <button onClick={() => { playClick(); setGameMode("idle"); setBattle({...activeBounty}); setMainTab("combat"); }} className="rbx-btn rbx-btn-orange" style={{ width: "100%", animation: "pulseRed 1.5s infinite" }}>AFFRONTER LA PRIME</button>
+                <div style={{ fontSize: "10px", color: "#9ca3af", marginTop: "5px" }}>Expire dans: {Math.ceil((activeBounty.expiresAt - Date.now()) / 60000)} min</div>
+              </div>
+            )}
 
             {hubTab === "menu" && (
               <div className="rbx-panel fade-in">
@@ -40,6 +55,37 @@ export function HubView({
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+
+
+            {hubTab === "expeditions" && (
+              <div className="rbx-panel fade-in">
+                <h4 style={{ margin: "0 0 15px", color: "#3b82f6" }}>🌍 Expéditions AFK</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {[0, 1, 2].map(slotIdx => {
+                    const exp = player.expeditions && player.expeditions[slotIdx];
+                    if (exp) {
+                       const timeLeft = Math.max(0, exp.endTime - Date.now());
+                       return (
+                         <div key={slotIdx} style={{ background: "#18181b", padding: "10px", borderRadius: "8px", border: "1px solid #334155" }}>
+                           <span style={{ fontSize: "14px" }}>Expédition en cours...</span>
+                           <div style={{ fontSize: "10px", color: "#38bdf8", marginTop: "5px" }}>Temps restant: {Math.ceil(timeLeft / 60000)} min</div>
+                         </div>
+                       );
+                    } else {
+                       return (
+                         <div key={slotIdx} style={{ background: "#18181b", padding: "10px", borderRadius: "8px", border: "1px dashed #334155", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                           <span style={{ fontSize: "12px", color: "#9ca3af" }}>Slot Libre</span>
+                           <div style={{ display: "flex", gap: "5px" }}>
+                             <button onClick={() => { playClick(); setPlayer(p => { let nExp = [...(p.expeditions||[null,null,null])]; nExp[slotIdx] = { endTime: Date.now() + 2*3600000, rewards: { beli: 50000 * p.level.current, gems: 10 } }; return {...p, expeditions: nExp}; }); }} className="rbx-btn rbx-btn-blue" style={{ fontSize: "10px", padding: "4px 8px" }}>2H</button>
+                             <button onClick={() => { playClick(); setPlayer(p => { let nExp = [...(p.expeditions||[null,null,null])]; nExp[slotIdx] = { endTime: Date.now() + 8*3600000, rewards: { beli: 250000 * p.level.current, gems: 50 } }; return {...p, expeditions: nExp}; }); }} className="rbx-btn rbx-btn-purple" style={{ fontSize: "10px", padding: "4px 8px" }}>8H</button>
+                           </div>
+                         </div>
+                       );
+                    }
+                  })}
+                </div>
               </div>
             )}
 

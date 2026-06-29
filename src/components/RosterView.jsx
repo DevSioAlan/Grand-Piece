@@ -82,7 +82,7 @@ export function RosterView({
                       const instId = player.pets.active[i]; const petItem = instId ? player.pets.inventory.find(p => p.instanceId === instId) : null;
                       const petData = petItem ? PETS_DB[petItem.itemId] : null; const isSelected = petSelectSlot === i;
                       return (
-                        <div key={`pet_${i}`} onClick={() => { playClick(); setPetSelectSlot(i); }} style={{ flex: 1, height: "80px", background: "#18181b", border: isSelected ? "2px solid #22c55e" : petData ? `1px solid ${RARITY[petData.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                        <div key={`pet_${i}`} onClick={() => { playClick(); setPetSelectSlot(i); }} className={petItem ? `pet-aura-${petItem.stars||1}` : ""} style={{ flex: 1, height: "80px", background: "#18181b", border: isSelected ? "2px solid #22c55e" : petData ? `1px solid ${RARITY[petData.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
                           {petItem && <span style={{position:"absolute", top:"4px", right:"4px", fontSize:"10px", color:"#eab308", fontWeight:"bold"}}>⭐{petItem.stars||1}</span>}
                           <span style={{ fontSize: "28px" }}>{petData ? petData.img : "🐾"}</span>
                           {petData && <span style={{ fontSize: "8px", color: "#a1a1aa", marginTop: "4px" }}>{petData.desc}</span>}
@@ -104,12 +104,17 @@ export function RosterView({
                         const pData = PETS_DB[invPet.itemId]; if (!pData) return null;
                         const isEq = player.pets.active.includes(invPet.instanceId);
                         return (
-                          <div key={invPet.instanceId} style={{ background: "#18181b", border: `1px solid ${RARITY[pData.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1, position: "relative" }}>
+                          <div key={invPet.instanceId} className={`pet-aura-${invPet.stars||1}`} style={{ background: "#18181b", border: `1px solid ${RARITY[pData.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1, position: "relative", marginBottom: "10px" }}>
                             <div onClick={() => { if (!isEq) { playClick(); setPlayer(p => { let n = [...p.pets.active]; n[petSelectSlot] = invPet.instanceId; return {...p, pets: {...p.pets, active: n}}; }); setPetSelectSlot(null); } }}>
                               <div style={{ fontSize: "24px" }}>{pData.img}</div><div style={{ fontSize: "8px", color: "#fff" }}>{pData.name}</div>
                               <div style={{ fontSize: "10px", color: "#eab308", fontWeight: "bold" }}>⭐{invPet.stars||1}</div>
                             </div>
+
                             <button onClick={(e) => { e.stopPropagation(); fusePets(invPet.itemId, invPet.stars||1); }} style={{ position: "absolute", top: "-5px", right: "-5px", background: "#3b82f6", border: "none", color: "#fff", fontSize: "10px", borderRadius: "50%", width: "20px", height: "20px" }}>+</button>
+                            {invPet.stars < 5 && player.pets.inventory.filter(p => p.itemId === invPet.itemId && (p.stars || 1) === (invPet.stars || 1) && !player.pets.active.includes(p.instanceId)).length >= 5 && (
+                                <button onClick={(e) => { e.stopPropagation(); playClick(); fusePets(invPet.itemId, invPet.stars || 1); }} className="rbx-btn rbx-btn-gold" style={{ position: "absolute", bottom: "-15px", left: "50%", transform: "translateX(-50%)", fontSize: "8px", padding: "2px 4px", whiteSpace: "nowrap", zIndex: 10 }}>FUSION ✨</button>
+                            )}
+
                           </div>
                         )
                       })}
