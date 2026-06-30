@@ -274,6 +274,37 @@ export default function App() {
 
 
 
+  const tradeMarketFruit = (id, action) => {
+    playClick();
+    const currentPrice = marketPrices[id];
+
+    if (action === "BUY") {
+      if (player.beli >= currentPrice) {
+        setPlayer(p => ({
+          ...p,
+          beli: p.beli - currentPrice,
+          inventory: [...p.inventory, { instanceId: Date.now() + Math.random().toString(), itemId: id, awakenLvl: 0 }]
+        }));
+        addToast(`Fruit acheté !`, "#22c55e");
+      } else {
+        addToast(`Fonds insuffisants !`, "#ef4444");
+      }
+    } else if (action === "SELL") {
+      const itemToSell = player.inventory.find(i => i.itemId === id && !Object.values(player.equipped).includes(i.instanceId));
+      if (!itemToSell) {
+        addToast(`Aucun fruit non-équipé disponible !`, "#ef4444");
+      } else {
+        const sellPrice = Math.floor(currentPrice * 0.75);
+        setPlayer(p => ({
+          ...p,
+          beli: p.beli + sellPrice,
+          inventory: p.inventory.filter(i => i.instanceId !== itemToSell.instanceId)
+        }));
+        addToast(`Fruit vendu pour ${Format.num(sellPrice)} ฿ !`, "#3b82f6");
+      }
+    }
+  };
+
   const changeSea = (newSea) => {
     playClick();
     if (Date.now() < player.logPoseTime) return addToast(`🧭 Log Pose en charge...`, "#3b82f6");
@@ -520,7 +551,7 @@ export default function App() {
 
   const { getEquipped, getDmgMult, getDmg, dps, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
   const { performSummon, handleAutoSell } = useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast);
-  const { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
+  const { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip, enterRaid } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
 
 
   // Bounty System

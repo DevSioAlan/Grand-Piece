@@ -78,6 +78,8 @@ export function useIncremental(player, setPlayer, setBattle, setAutoClick, setLe
     addToast(`Fusion Réussie ! Familier ⭐${stars + 1} créé !`, "#22c55e");
   };
 
+  const enterRaid = () => {};
+
   const forgeItem = (itemId) => {
     playClick();
     const itemData = ITEMS_DB[itemId];
@@ -106,5 +108,5 @@ export function useIncremental(player, setPlayer, setBattle, setAutoClick, setLe
     addToast("Forge Réussie: " + targetItem.name + " (" + targetRarity + ") !", "#a855f7");
   };
 
-  return { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip };
+  return { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip, enterRaid };
 }
