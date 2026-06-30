@@ -176,7 +176,6 @@ export default function App() {
 
   // --- ENVIRONMENT LOOPS ---
   useEffect(() => {
-    const dps = Math.floor(getDmg() * 2);
   if (isLoading) return;
     const interval = setInterval(() => {
       setMarketPrices({ "f_sube": 150+Math.random()*200, "f_gomu": 1000+Math.random()*2500, "f_mera": 5000+Math.random()*9000, "f_nika": 30000+Math.random()*80000 });
@@ -519,7 +518,7 @@ export default function App() {
     setMainTab("combat");
   };
 
-  const { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
+  const { getEquipped, getDmgMult, getDmg, dps, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
   const { performSummon, handleAutoSell } = useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast);
   const { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
 

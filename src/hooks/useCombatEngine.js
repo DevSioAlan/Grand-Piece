@@ -88,6 +88,8 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
 
   const getDmg = () => Math.floor(player.power * getDmgMult());
 
+  const dps = Math.floor(getDmg() * 2);
+
   const executeCard = (card, index, combatState) => {
     if (!battle || combatState.energy < card.cost) return;
     playClick();
@@ -153,5 +155,5 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
 
   };
 
-  return { getEquipped, getDmgMult, getDmg, executeCard, synMult, activeSyns };
+  return { getEquipped, getDmgMult, getDmg, dps, executeCard, synMult, activeSyns };
 }
