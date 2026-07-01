@@ -18,7 +18,7 @@ import { HubView } from './components/HubView';
 import { ProfileModal } from './components/ProfileModal';
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [introText, setIntroText] = useState("CHARGEMENT DU NOUVEAU MONDE...");
   
@@ -176,7 +176,7 @@ export default function App() {
 
   // --- ENVIRONMENT LOOPS ---
   useEffect(() => {
-  if (isLoading) return;
+  if (isLoading) return null;
     const interval = setInterval(() => {
       setMarketPrices({ "f_sube": 150+Math.random()*200, "f_gomu": 1000+Math.random()*2500, "f_mera": 5000+Math.random()*9000, "f_nika": 30000+Math.random()*80000 });
       const weathers = ["Calme ☀️", "Tempête ⚡", "Canicule 🔥", "Blizzard ❄️"];
@@ -658,7 +658,7 @@ export default function App() {
   }
 
   return (
-    <div style={{ background: gameMode === "tower" ? "#1e1b4b" : gameMode === "pvp" ? "#450a0a" : player.sea === "Nouveau Monde" ? "#171717" : player.sea === "Grand Line" ? "#0f172a" : "#050505", height: "100dvh", width: "100vw", color: "#f8fafc", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", transition: "background 0.5s" }}>
+    <div className={`theme-${player.settings?.theme || 'pirate'}`} style={{ background: gameMode === "tower" ? "#1e1b4b" : gameMode === "pvp" ? "#450a0a" : "var(--bg-primary)", height: "100dvh", width: "100vw", color: "var(--text-primary)", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", transition: "background 0.5s" }}>
       {levelUpFlash && <div style={{ position: "absolute", inset: 0, background: "rgba(255, 255, 255, 0.4)", zIndex: 999, pointerEvents: "none", animation: "flashAnim 0.5s ease-out" }} />}
       
       {showUltAnim.active && (
@@ -681,7 +681,7 @@ export default function App() {
       )}
 
       {/* TOASTS SYSTEM */}
-      <div style={{ position: "absolute", top: "env(safe-area-inset-top, 20px)", left: "50%", transform: "translateX(-50%)", zIndex: 1000, display: "flex", flexDirection: "column", gap: "10px", pointerEvents: "none", width: "90%", maxWidth: "400px" }}>
+      <div style={{ position: "absolute", top: "var(--safe-area-top)", left: "50%", transform: "translateX(-50%)", zIndex: 1000, display: "flex", flexDirection: "column", gap: "10px", pointerEvents: "none", width: "90%", maxWidth: "400px" }}>
         {toasts.map(t => (
           <div key={t.id} style={{ background: "rgba(24,24,27,0.95)", border: `1px solid ${t.color}`, padding: "10px 15px", borderRadius: "8px", fontSize: "12px", fontWeight: "bold", boxShadow: "0 4px 15px rgba(0,0,0,0.5)", animation: "toastSlide 0.3s ease-out", display: "flex", justifyContent: "center" }}>{t.msg}</div>
         ))}
@@ -851,7 +851,7 @@ export default function App() {
       )}
 
       {/* --- HUD HEADER COMPACT --- */}
-      <div style={{ background: "#111113", paddingTop: "calc(env(safe-area-inset-top) + 20px)", paddingBottom: "10px", paddingLeft: "15px", paddingRight: "15px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid #27272a", zIndex: 50 }}>
+      <div style={{ background: "var(--bg-secondary)", paddingTop: "calc(var(--safe-area-top) + 20px)", paddingBottom: "10px", paddingLeft: "15px", paddingRight: "15px", display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: "1px solid var(--border-color)", zIndex: 50 }}>
         <div>
           <div onClick={() => { playClick(); setShowProfile(true); }} style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "8px", background: "rgba(255,255,255,0.05)", padding: "4px 10px", borderRadius: "20px", cursor: "pointer", border: "1px solid #333" }}>
             <div className={`frame-${player.profile.frame}`} style={{ fontSize: "20px", background: "#000", borderRadius: "50%", width:"32px", height:"32px", display:"flex", alignItems:"center", justifyContent:"center" }}>{player.profile.avatar}</div>
@@ -908,14 +908,16 @@ export default function App() {
       </div>
 
       {/* --- BOTTOM NAVIGATION BAR V24 --- */}
-      <div style={{ background: "rgba(9, 9, 11, 0.98)", borderTop: "1px solid #27272a", display: "flex", justifyContent: "space-between", padding: "10px 10px calc(env(safe-area-inset-bottom) + 15px)", zIndex: 100 }}>
-        {[ { id: "combat", icon: "⚔️", label: "COMBAT" }, { id: "train", icon: "💪", label: "TRAIN" }, { id: "summon", icon: "✨", label: "GACHA" }, { id: "roster", icon: "⚓", label: "ÉQUIPE" }, { id: "inventory", icon: "🎒", label: "SAC" }, { id: "hub", icon: "🧭", label: "MENU" } ].map(t => (
+      <div style={{ background: "var(--bg-secondary)", borderTop: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", padding: "10px 10px calc(var(--safe-area-bottom) + 15px)", zIndex: 100 }}>
+        {[ { id: "combat", icon: "⚔️", label: "COMBAT" }, { id: "train", icon: "💪", label: "TRAIN" }, { id: "summon", icon: "✨", label: "GACHA" }, { id: "roster", icon: "⚓", label: "ÉQUIPE" }, { id: "inventory", icon: "🎒", label: "SAC" }, { id: "hub", icon: "🧭", label: "MENU" } ].map(t => {
+          const isHubReady = t.id === "hub" && (currentTime - player.lastDaily > 24 * 60 * 60 * 1000);
+          return (
           <div key={t.id} onClick={() => { playClick(); setMainTab(t.id); }} className="ios-tap" style={{ position: "relative", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: "4px", padding: "4px 0", opacity: mainTab === t.id ? 1 : 0.4, transition: "0.2s" }}>
-            {t.id === "hub" && (Date.now() - player.lastDaily > 24 * 60 * 60 * 1000) && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
+            {isHubReady && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
             {t.id === "train" && (player.beli >= 10000 * Math.pow(2.5, player.upgrades.dmg || 0)) && <div style={{ position: "absolute", top: 2, right: 10, width: 8, height: 8, background: "#ef4444", borderRadius: "50%", boxShadow: "0 0 5px #ef4444" }} />}
             <span style={{ fontSize: "20px", filter: mainTab === t.id ? "drop-shadow(0 0 8px rgba(56,189,248,0.8))" : "none" }}>{t.icon}</span><span style={{ fontSize: "8px", fontWeight: "900", color: mainTab === t.id ? "#38bdf8" : "#9ca3af" }}>{t.label}</span>
           </div>
-        ))}
+        );})}
       </div>
 
     </div>
