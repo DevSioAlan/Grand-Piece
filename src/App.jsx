@@ -18,7 +18,7 @@ import { HubView } from './components/HubView';
 import { ProfileModal } from './components/ProfileModal';
 
 export default function App() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [introText, setIntroText] = useState("CHARGEMENT DU NOUVEAU MONDE...");
   
@@ -38,6 +38,12 @@ export default function App() {
   const [combatDeck, setCombatDeck] = useState([]);
   const [dragonBalls, setDragonBalls] = useState(0);
   const [comboCount, setComboCount] = useState(0); // NOUVEAU V24: Compteur de Combo
+
+  const [currentTime, setCurrentTime] = useState(() => Date.now());
+  useEffect(() => {
+      const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+      return () => clearInterval(interval);
+  }, []);
 
   const [floatingTexts, setFloatingTexts] = useState([]);
   const [toasts, setToasts] = useState([]);
@@ -176,7 +182,7 @@ export default function App() {
 
   // --- ENVIRONMENT LOOPS ---
   useEffect(() => {
-  if (isLoading) return null;
+  if (isLoading) return;
     const interval = setInterval(() => {
       setMarketPrices({ "f_sube": 150+Math.random()*200, "f_gomu": 1000+Math.random()*2500, "f_mera": 5000+Math.random()*9000, "f_nika": 30000+Math.random()*80000 });
       const weathers = ["Calme ☀️", "Tempête ⚡", "Canicule 🔥", "Blizzard ❄️"];
