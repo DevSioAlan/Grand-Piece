@@ -6,7 +6,7 @@ import { PETS_DB } from '../data/pets';
 import { CREW_MEMBERS, BGM_TRACKS } from '../data/combat';
 
 export function HubView({
-    mainTab, player, playClick, hubTab, setHubTab, claimDaily, enterRaid, changeSea, marketPrices, autoSummonConfig, setAutoSummonConfig, setPlayer, buyShip, legalMacro, setLegalMacro, startRaid, tradeMarketFruit, redeemCode, promoCode, setPromoCode, activeBounty, setBattle, setGameMode, setMainTab
+    mainTab, player, playClick, hubTab, setHubTab, claimDaily, enterRaid, changeSea, marketPrices, autoSummonConfig, setAutoSummonConfig, setPlayer, buyShip, legalMacro, setLegalMacro, startRaid, tradeMarketFruit, redeemCode, promoCode, setPromoCode, activeBounty, setBattle, setGameMode, setMainTab, addToast
 }) {
     if (mainTab !== "hub") return null;
     return (

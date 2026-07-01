@@ -462,6 +462,8 @@ export default function App() {
     else setBattle(prev => ({ ...prev, hp: newHp }));
   };
 
+  const getAtkDelay = () => player.settings?.fastMode ? 500 : 1500;
+
   // Auto-Fight AI
   useEffect(() => {
     let autoTimer;
@@ -668,7 +670,7 @@ export default function App() {
 
       {showDailyModal && (
         <div className="modal-overlay ios-tap" onClick={() => setShowDailyModal(false)} style={{ zIndex: 1100 }}>
-          <div className="rbx-panel fade-in" style={{ width: "90%", maxWidth: "300px", border: "2px solid #eab308", textAlign: "center", animation: "ultimateReveal 0.5s forwards" }} onClick={e => e.stopPropagation()}>
+          <div className="rbx-panel fade-in" style={{ width: "90%", maxWidth: "300px", border: "2px solid #eab308", textAlign: "center" }} onClick={e => e.stopPropagation()}>
             <div style={{ fontSize: "60px", animation: "divineFloat 2s infinite alternate" }}>🎁</div>
             <h2 style={{ color: "#eab308", margin: "10px 0" }}>BONUS QUOTIDIEN</h2>
             <div style={{ fontSize: "18px", fontWeight: "bold", color: "#38bdf8", margin: "10px 0" }}>+{Format.num(dailyRewardAmount.gems)} 💎</div>
@@ -901,7 +903,7 @@ export default function App() {
             mainTab={mainTab} player={player} playClick={playClick} hubTab={hubTab} setHubTab={setHubTab}
             claimDaily={claimDaily} enterRaid={enterRaid} changeSea={changeSea} marketPrices={marketPrices}
             autoSummonConfig={autoSummonConfig} setAutoSummonConfig={setAutoSummonConfig} setPlayer={setPlayer} buyShip={buyShip} legalMacro={legalMacro} setLegalMacro={setLegalMacro}
-            startRaid={startRaid} tradeMarketFruit={tradeMarketFruit} redeemCode={redeemCode} promoCode={promoCode} setPromoCode={setPromoCode} activeBounty={activeBounty} setBattle={setBattle} setGameMode={setGameMode} setMainTab={setMainTab}
+            startRaid={startRaid} tradeMarketFruit={tradeMarketFruit} redeemCode={redeemCode} promoCode={promoCode} setPromoCode={setPromoCode} activeBounty={activeBounty} setBattle={setBattle} setGameMode={setGameMode} setMainTab={setMainTab} addToast={addToast}
         />
       </div>
 
