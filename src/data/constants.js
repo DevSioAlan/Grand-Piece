@@ -85,9 +85,11 @@ export const DEFAULT_PLAYER = {
   pets: { inventory: [], active: [null, null] },
   pity: { legendary: 0, mythic: 0, ex: 0 },
   sea: "East Blue", lastDaily: 0, lastLogin: Date.now(), weather: "Calme ☀️", logPoseTime: 0,
-  pvpRank: 1000, towerFloor: 1, playerHp: { current: 1000, max: 1000 },
+  pvpRank: 1000, hiddenMMR: 1000, towerFloor: 1, playerHp: { current: 1000, max: 1000 },
   settings: { sound: true, music: false, fastMode: false, hideDmg: false, shake: true, skipLowAnim: true, bgmTrack: 0, bgmVolume: 0.4, autoSellRarities: { Common: false, Uncommon: false, Rare: false, Epic: false } },
-  redeemedCodes: []
+  redeemedCodes: [],
+  antimatter: 0,
+  distortions: { afkYield: 0, cdReduction: 0 }
 };
 
 export const TITLES_BUFFS = {

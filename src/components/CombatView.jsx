@@ -75,10 +75,23 @@ export function CombatView({
                 {gameMode === "pvp" && (
                   <div className="rbx-panel fade-in" style={{ textAlign: "center", padding: "15px", border: "2px solid #ef4444", display: "flex", flexDirection: "column", flex: 1 }}>
                     <h2 style={{ color: "#ef4444", margin: "0 0 5px", fontSize: "20px", textTransform: "uppercase" }}>Arène PvP Asynchrone</h2>
-                    <p style={{ fontSize: "11px", color: "#cbd5e1", marginBottom: "15px" }}>Rang actuel : <strong>{player.pvpRank}</strong></p>
+
+
+                    {(() => {
+                      const getPvpTitle = (mmr) => {
+                          if (mmr < 1200) return "Mousse";
+                          if (mmr < 1500) return "Pirate";
+                          if (mmr < 1800) return "Supernova";
+                          if (mmr < 2200) return "Grand Corsaire";
+                          if (mmr < 2800) return "Amiral";
+                          return "Empereur";
+                      };
+                      return <p style={{ fontSize: "11px", color: "#cbd5e1", marginBottom: "15px" }}>Rang actuel : <strong>{getPvpTitle(player.hiddenMMR || 1000)} ({player.hiddenMMR || 1000} MMR)</strong></p>;
+                    })()}
+
                     <button onClick={() => {
                       playClick();
-                      const enemyPower = player.power * (0.85 + Math.random() * 0.3);
+                      const enemyPower = (player.hiddenMMR || 1000) * (0.85 + Math.random() * 0.3) * (player.power / 1000 + 1);
                       const enemyHp = Math.floor(enemyPower * 50);
                       const names = ["Dread", "Skull", "Bones", "Iron", "Storm", "Black"];
                       const name = names[Math.floor(Math.random()*names.length)] + " Pirate";
@@ -92,11 +105,11 @@ export function CombatView({
             {/* UNIFIED COMBAT ARENA (When battle is active) */}
             {battle && (
               <div className="rbx-panel fade-in" style={{ padding: "15px", display: "flex", flexDirection: "column", flex: 1, border: gameMode === "tower" ? "2px solid #a855f7" : gameMode === "pvp" ? "2px solid #ef4444" : "1px solid var(--border-color)" }}>
-                <div className="fade-in" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                <div className="fade-in" style={{ flex: 1, display: "flex", flexDirection: "column", boxShadow: combatState.isBloodlust ? "inset 0 0 50px rgba(239, 68, 68, 0.5)" : "none", transition: "box-shadow 0.3s" }}>
 
                   {/* ENNEMY HP BAR */}
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "5px" }}>
-                    <span style={{ color: "#22c55e", fontSize: "12px", fontWeight: "bold" }}>Vous: {Format.num(player.playerHp.current)} PV</span>
+                    <span style={{ color: combatState.isBloodlust ? "#ef4444" : "#22c55e", fontSize: "12px", fontWeight: "bold", textShadow: combatState.isBloodlust ? "0 0 10px #ef4444" : "none" }}>Vous: {Format.num(player.playerHp.current)} PV {combatState.isBloodlust && "🩸"}</span>
                     <span style={{ color: battle.isBoss ? "#ef4444" : ELEMENTS[battle.elem]?.color || "#eab308", fontSize: "12px", fontWeight: "bold" }}>{battle.name} {ELEMENTS[battle.elem]?.icon}</span>
                   </div>
                   <div style={{ width: "100%", background: "var(--border-color)", height: "12px", borderRadius: "4px", marginBottom: "10px", position: "relative", overflow: "hidden" }}>

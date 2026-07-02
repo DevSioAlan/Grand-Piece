@@ -165,8 +165,9 @@ export default function App() {
           if (diffSecs > 3600) { 
             const hours = Math.min(24, diffSecs / 3600);
             const pwr = (20 + m.level.current * 5) * (1 + m.stats.strength*0.1);
-            const gainBeli = Math.floor(hours * 100 * pwr);
-            const gainXp = Math.floor(hours * 50);
+            const afkYieldMult = 1 + (m.distortions?.afkYield || 0) * 0.1;
+            const gainBeli = Math.floor(hours * 100 * pwr * afkYieldMult);
+            const gainXp = Math.floor(hours * 50 * afkYieldMult);
             m.beli += gainBeli;
             setTimeout(() => addToast(`🌙 Gains AFK: ${Format.num(gainBeli)} ฿, ${gainXp} XP`, "#eab308"), 4000);
           }
@@ -188,7 +189,14 @@ export default function App() {
   useEffect(() => {
   if (isLoading) return;
     const interval = setInterval(() => {
-      setMarketPrices({ "f_sube": 150+Math.random()*200, "f_gomu": 1000+Math.random()*2500, "f_mera": 5000+Math.random()*9000, "f_nika": 30000+Math.random()*80000 });
+      setMarketPrices(prev => {
+        let newPrices = { ...prev };
+        Object.keys(newPrices).forEach(k => {
+          let fluctuation = 0.8 + Math.random() * 0.4;
+          newPrices[k] = Math.max(10, Math.floor(newPrices[k] * fluctuation));
+        });
+        return newPrices;
+      });
       const weathers = ["Calme ☀️", "Tempête ⚡", "Canicule 🔥", "Blizzard ❄️"];
       setPlayer(p => ({ ...p, weather: weathers[Math.floor(Math.random() * weathers.length)] }));
     }, 60000);
@@ -196,21 +204,40 @@ export default function App() {
   }, [isLoading]);
 
   useEffect(() => {
-    let macroTimer;
-    if (legalMacro.active && !isLoading) {
-      macroTimer = setInterval(() => {
-        if (!battle && !raidActive) {
-          if (legalMacro.counter < 5) {
-            setLegalMacro(m => ({ ...m, currentAction: "Farm Sbires", counter: m.counter + 1 }));
-            const e = SEAS[player.sea][0]; setBattle({ ...e, hp: e.hp, maxHp: e.hp });
-          } else {
-            setLegalMacro(m => ({ ...m, currentAction: "Raid", counter: 0 })); startRaid();
-          }
+    if (!legalMacro.active || isLoading) return;
+
+    let timerId;
+
+    const executeMacroAction = () => {
+      if (!battle && !raidActive) {
+        if (legalMacro.counter < 5) {
+          setLegalMacro(m => ({ ...m, currentAction: "Farm Sbires", counter: m.counter + 1 }));
+          const e = SEAS[player.sea][0]; setBattle({ ...e, hp: e.hp, maxHp: e.hp });
+        } else {
+          setLegalMacro(m => ({ ...m, currentAction: "Raid", counter: 0 }));
+          startRaid();
         }
-      }, 1000);
+      }
+    };
+
+    if (player.upgrades.ghostAuto > 0) {
+      const scheduleNext = () => {
+        const delay = 1000 + Math.random() * 500;
+        timerId = setTimeout(() => {
+          executeMacroAction();
+          scheduleNext();
+        }, delay);
+      };
+      scheduleNext();
+    } else {
+      timerId = setInterval(executeMacroAction, 1000);
     }
-    return () => clearInterval(macroTimer);
-  }, [legalMacro.active, battle, raidActive, isLoading, player.sea]);
+
+    return () => {
+      if (player.upgrades.ghostAuto > 0) clearTimeout(timerId);
+      else clearInterval(timerId);
+    };
+  }, [legalMacro.active, battle, raidActive, isLoading, player.sea, player.upgrades.ghostAuto]);
 
   useEffect(() => {
     let summonTimer;
@@ -321,7 +348,7 @@ export default function App() {
     const newIdx = Object.keys(SEAS).indexOf(newSea);
     if (player.level.current < newIdx * 30) return addToast(`❌ Niveau ${newIdx * 30} requis.`, "#ef4444");
     setPlayer(p => ({ ...p, sea: newSea, logPoseTime: Date.now() + 60000 }));
-    setBattle(null); setCombatDeck([]); setDragonBalls(0); setComboCount(0);
+    setBattle(null); setCombatDeck([]); setDragonBalls(0); setComboCount(0); setCombatState(prev => ({...prev, isBloodlust: false}));
   };
 
   const redeemCode = () => {
@@ -421,13 +448,13 @@ export default function App() {
   useEffect(() => {
     if(player.playerHp.current <= 0 && battle) {
       if (gameMode === "pvp") {
-        setPlayer(p => ({...p, pvpRank: Math.max(0, p.pvpRank - 25), playerHp: {...p.playerHp, current: p.playerHp.max}}));
+        setPlayer(p => ({...p, pvpRank: Math.max(0, p.pvpRank - 25), hiddenMMR: Math.max(1000, (p.hiddenMMR || 1000) - 15), playerHp: {...p.playerHp, current: p.playerHp.max}}));
         addToast("☠️ Défaite... -25 Rang", "#ef4444");
       } else {
         setPlayer(p => ({...p, playerHp: {...p.playerHp, current: p.playerHp.max}, bounty: Math.max(0, Math.floor(p.bounty * 0.95))}));
         addToast("☠️ K.O... Prime réduite.", "#ef4444");
       }
-      setBattle(null); setAutoClick(false);
+      setBattle(null); setAutoClick(false); setCombatState(prev => ({...prev, isBloodlust: false}));
     }
   }, [player.playerHp.current, battle]);
 
@@ -491,6 +518,7 @@ export default function App() {
   }, [autoClick, battle, combatDeck, combatState.energy, dragonBalls, combatState.enemyAttacking]);
 
   const handleVictory = () => {
+    setCombatState(prev => ({...prev, isBloodlust: false}));
     const shipBonus = SHIPS[player.shipId]?.extraBeli || 1;
     let beliInc = 1 + (player.upgrades.beli * 0.1); let xpInc = 1 + (player.upgrades.xp * 0.1);
     player.pets.active.forEach(pInst => {
@@ -527,6 +555,15 @@ export default function App() {
     
     setDragonBalls(0); setCombatDeck([]); setComboCount(0); // Reset
     
+
+    if (battle.isAbyss) {
+      setPlayer(p => ({...p, antimatter: (p.antimatter || 0) + 1}));
+      addToast("🌌 FAILLE FERMÉE ! +1 Antimatière", "#d8b4fe");
+      setBattle(null);
+      setAutoClick(false);
+      return;
+    }
+
     if (battle.name === activeBounty?.name) {
       setActiveBounty(null);
       setBattle(null); setAutoClick(false);
@@ -536,7 +573,7 @@ export default function App() {
       setBattle(null); setAutoClick(false);
     } else if (gameMode === "pvp") {
       addToast("🏆 Victoire ! +50 Rang", "#a855f7");
-      setPlayer(p => ({...p, pvpRank: p.pvpRank + 50, bounty: p.bounty + 10000}));
+      setPlayer(p => ({...p, pvpRank: p.pvpRank + 50, hiddenMMR: (p.hiddenMMR || 1000) + 25, bounty: p.bounty + 10000}));
       setBattle(null); setAutoClick(false);
     } else if (raidActive) {
       if (raidWave >= 5) { 
@@ -561,7 +598,7 @@ export default function App() {
     setMainTab("combat");
   };
 
-  const { getEquipped, getDmgMult, getDmg, dps, executeCard, synMult, activeSyns } = useCombatEngine(player, battle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText);
+  const { getEquipped, getDmgMult, getDmg, dps, executeCard, synMult, activeSyns } = useCombatEngine(player, setPlayer, battle, setBattle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText, handleVictory);
   const { performSummon, handleAutoSell } = useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast);
   const { forgeItem, fusePets, handleRebirth, buyRebirthUpgrade, trainStat, buyIncrementalUpgrade, buyHakiTalent, buyShip, enterRaid } = useIncremental(player, setPlayer, setBattle, setAutoClick, setLevelUpFlash, addToast, playClick);
 
@@ -897,6 +934,7 @@ export default function App() {
         <TrainView
             mainTab={mainTab} player={player} playClick={playClick} trainTab={trainTab} setTrainTab={setTrainTab}
             trainStat={trainStat} buyIncrementalUpgrade={buyIncrementalUpgrade} buyHakiTalent={buyHakiTalent} buyRebirthUpgrade={buyRebirthUpgrade} handleRebirth={handleRebirth}
+            setPlayer={setPlayer}
         />
         <SummonView
             mainTab={mainTab} player={player} playClick={playClick} banner={banner} setBanner={setBanner}
