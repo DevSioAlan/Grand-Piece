@@ -35,7 +35,7 @@ export function TrainView({
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", padding: "10px 0" }}>
 
                     {/* Observation Node */}
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "#18181b", padding: "10px", borderRadius: "12px", border: player.hakiTree['observation'] > 0 ? "2px solid #a855f7" : "1px solid #3f3f46", width: "180px", zIndex: 2 }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "var(--bg-secondary)", padding: "10px", borderRadius: "12px", border: player.hakiTree['observation'] > 0 ? "2px solid #a855f7" : "1px solid #3f3f46", width: "180px", zIndex: 2 }}>
                         <span style={{ fontSize: "12px", fontWeight: "bold", color: player.hakiTree['observation'] > 0 ? "#d8b4fe" : "#9ca3af" }}>OBSERVATION</span>
                         <span style={{ fontSize: "10px", color: "#a1a1aa", marginBottom: "5px" }}>Niv. {player.hakiTree['observation']}/5</span>
                         <button onClick={() => buyHakiTalent('observation')} disabled={player.hakiPoints <= 0 || player.hakiTree['observation'] >= 5} className="rbx-btn rbx-btn-purple" style={{ padding: "4px 12px", fontSize: "10px", width: "100%" }}>{player.hakiTree['observation'] >= 5 ? "MAX" : "UPGRADE"}</button>
@@ -45,7 +45,7 @@ export function TrainView({
                     <div style={{ width: "2px", height: "20px", background: player.hakiTree['observation'] > 0 ? "#a855f7" : "#3f3f46", zIndex: 1 }}></div>
 
                     {/* Armament Node */}
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "#18181b", padding: "10px", borderRadius: "12px", border: player.hakiTree['armament'] > 0 ? "2px solid #a855f7" : "1px solid #3f3f46", width: "180px", opacity: player.hakiTree['observation'] >= 1 ? 1 : 0.5, zIndex: 2 }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "var(--bg-secondary)", padding: "10px", borderRadius: "12px", border: player.hakiTree['armament'] > 0 ? "2px solid #a855f7" : "1px solid #3f3f46", width: "180px", opacity: player.hakiTree['observation'] >= 1 ? 1 : 0.5, zIndex: 2 }}>
                         <span style={{ fontSize: "12px", fontWeight: "bold", color: player.hakiTree['armament'] > 0 ? "#d8b4fe" : "#9ca3af" }}>ARMAMENT</span>
                         <span style={{ fontSize: "10px", color: "#a1a1aa", marginBottom: "5px" }}>Niv. {player.hakiTree['armament']}/5</span>
                         <button onClick={() => buyHakiTalent('armament')} disabled={player.hakiPoints <= 0 || player.hakiTree['armament'] >= 5 || player.hakiTree['observation'] < 1} className="rbx-btn rbx-btn-purple" style={{ padding: "4px 12px", fontSize: "10px", width: "100%" }}>{player.hakiTree['armament'] >= 5 ? "MAX" : "UPGRADE"}</button>
@@ -55,7 +55,7 @@ export function TrainView({
                     <div style={{ width: "2px", height: "20px", background: player.hakiTree['armament'] > 0 ? "#a855f7" : "#3f3f46", zIndex: 1 }}></div>
 
                     {/* Kings Node */}
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "#18181b", padding: "10px", borderRadius: "12px", border: player.hakiTree['kings'] > 0 ? "2px solid #eab308" : "1px solid #3f3f46", width: "180px", opacity: player.hakiTree['armament'] >= 1 ? 1 : 0.5, zIndex: 2, boxShadow: player.hakiTree['kings'] > 0 ? "0 0 10px rgba(234,179,8,0.3)" : "none" }}>
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", background: "var(--bg-secondary)", padding: "10px", borderRadius: "12px", border: player.hakiTree['kings'] > 0 ? "2px solid #eab308" : "1px solid #3f3f46", width: "180px", opacity: player.hakiTree['armament'] >= 1 ? 1 : 0.5, zIndex: 2, boxShadow: player.hakiTree['kings'] > 0 ? "0 0 10px rgba(234,179,8,0.3)" : "none" }}>
                         <span style={{ fontSize: "12px", fontWeight: "bold", color: player.hakiTree['kings'] > 0 ? "#fef08a" : "#9ca3af" }}>KINGS HAKI</span>
                         <span style={{ fontSize: "10px", color: "#a1a1aa", marginBottom: "5px" }}>Niv. {player.hakiTree['kings']}/5</span>
                         <button onClick={() => buyHakiTalent('kings')} disabled={player.hakiPoints <= 0 || player.hakiTree['kings'] >= 5 || player.hakiTree['armament'] < 1} className="rbx-btn rbx-btn-gold" style={{ padding: "4px 12px", fontSize: "10px", width: "100%" }}>{player.hakiTree['kings'] >= 5 ? "MAX" : "AWAKEN"}</button>
@@ -99,7 +99,7 @@ export function TrainView({
                           <div style={{ position: "absolute", top: "50%", [isLeft ? "right" : "left"]: "-15px", width: "15px", height: "2px", background: lvl > 0 ? upg.color : "#3f3f46", transform: "translateY(-50%)", zIndex: 1 }}></div>
 
                           {/* Node Card */}
-                          <div style={{ background: "#18181b", padding: "10px", borderRadius: "12px", border: `2px solid ${lvl > 0 ? upg.color : '#3f3f46'}`, width: "120px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: lvl > 0 ? `0 0 10px ${upg.color}33` : "none", zIndex: 2 }}>
+                          <div style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "12px", border: `2px solid ${lvl > 0 ? upg.color : '#3f3f46'}`, width: "120px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: lvl > 0 ? `0 0 10px ${upg.color}33` : "none", zIndex: 2 }}>
                             <div style={{ fontSize: "12px", fontWeight: "bold", color: upg.color, textAlign: "center" }}>{upg.name}</div>
                             <div style={{ fontSize: "9px", color: "#a1a1aa", marginBottom: "2px" }}>{upg.desc} (Niv. {lvl})</div>
                             <button onClick={() => buyIncrementalUpgrade(upg.id)} className="rbx-btn" style={{ padding: "4px 8px", fontSize: "9px", background: player.beli >= cost ? upg.color : "#374151", color: player.beli >= cost ? "#000" : "#fff", width: "100%", marginTop: "5px", fontWeight: "bold", border: "none" }}>

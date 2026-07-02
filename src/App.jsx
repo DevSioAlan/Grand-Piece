@@ -481,7 +481,7 @@ export default function App() {
       autoTimer = setInterval(() => {
         if (combatDeck.length > 0) {
           const playableCardIdx = combatDeck.findIndex(c => combatState.energy >= c.cost);
-          if (playableCardIdx !== -1) executeCard(combatDeck[playableCardIdx], playableCardIdx);
+          if (playableCardIdx !== -1) executeCard(combatDeck[playableCardIdx], playableCardIdx, combatState);
         }
         if (combatState.enemyAttacking && combatState.vanishing >= 100) executeVanish();
         if (dragonBalls >= 7) executeRisingRush();
@@ -636,7 +636,7 @@ export default function App() {
         .pet-aura-2 { box-shadow: 0 0 10px rgba(34,197,94,0.5); animation: petPulse 2s infinite; }
         .pet-aura-3 { box-shadow: 0 0 15px rgba(59,130,246,0.8), inset 0 0 5px rgba(59,130,246,0.5); border: 1px solid #3b82f6 !important; }
         .pet-aura-4 { box-shadow: 0 0 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(239,68,68,0.5); border: 2px solid #000 !important; animation: hakiPulse 1.5s infinite alternate; }
-        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
+        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
 
         @keyframes petPulse { 0%, 100% { box-shadow: 0 0 5px rgba(34,197,94,0.3); } 50% { box-shadow: 0 0 15px rgba(34,197,94,0.7); } }
         @keyframes hakiPulse { 0% { box-shadow: 0 0 10px rgba(0,0,0,0.9); } 100% { box-shadow: 0 0 25px rgba(239,68,68,0.8); } }
@@ -662,7 +662,7 @@ export default function App() {
         `}</style>
         <div className="intro-logo">🏴‍☠️</div><div className="intro-title">GRAND PIECE<br/>LEGENDS</div>
         <div style={{ fontSize: "14px", color: "#a1a1aa", marginTop: "10px", letterSpacing: "2px" }}>{introText}</div>
-        <div style={{ width: "150px", height: "4px", background: "#27272a", borderRadius: "2px", marginTop: "30px", overflow: "hidden" }}><div className="intro-loader-bar"></div></div>
+        <div style={{ width: "150px", height: "4px", background: "var(--border-color)", borderRadius: "2px", marginTop: "30px", overflow: "hidden" }}><div className="intro-loader-bar"></div></div>
       </div>
     );
   }
@@ -713,8 +713,8 @@ export default function App() {
         .rare-shine { border: 1px solid #3b82f6; box-shadow: 0 0 10px rgba(59,130,246,0.5); animation: rarePulse 2s infinite; }
         .epic-pulse { border: 2px solid #a855f7 !important; box-shadow: 0 0 15px rgba(168,85,247,0.6); animation: epicPulse 1.5s infinite; }
         .legendary-shine { position: relative; overflow: hidden; border: 2px solid #eab308 !important; box-shadow: 0 0 25px rgba(234,179,8,0.6); }
-        .mythic-glow { border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #ef4444, #f97316, #ef4444) border-box; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); animation: pulseRed 1.5s infinite alternate; }
-        .divine-aura { border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #06b6d4, #3b82f6, #06b6d4) border-box; box-shadow: 0 0 30px rgba(6,182,212,0.8); animation: divineFloat 1s infinite alternate; }
+        .mythic-glow { border: 2px solid transparent !important; background: linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box, linear-gradient(45deg, #ef4444, #f97316, #ef4444) border-box; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); animation: pulseRed 1.5s infinite alternate; }
+        .divine-aura { border: 2px solid transparent !important; background: linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box, linear-gradient(45deg, #06b6d4, #3b82f6, #06b6d4) border-box; box-shadow: 0 0 30px rgba(6,182,212,0.8); animation: divineFloat 1s infinite alternate; }
         .ex-shatter { border: 2px solid transparent !important; background: linear-gradient(#000, #000) padding-box, linear-gradient(90deg, #f472b6, #38bdf8, #f472b6) border-box; box-shadow: 0 0 40px rgba(244, 114, 182, 0.8); animation: shatterEX 1s infinite alternate; z-index: 50;}
         
         @keyframes rarePulse { 0%, 100% { box-shadow: 0 0 5px rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 15px rgba(59,130,246,0.6); } }
@@ -732,16 +732,16 @@ export default function App() {
         .rainbow-text { background-image: linear-gradient(to right, #ef4444, #eab308, #22c55e, #3b82f6, #a855f7); -webkit-background-clip: text; color: transparent; animation: rainbow 3s linear infinite; background-size: 200% auto; font-weight: 900;}
         @keyframes rainbow { to { background-position: 200% center; } }
         
-        .dmg-text { position: absolute; font-weight: 900; animation: floatDmg 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; pointer-events: none; text-shadow: 0px 3px 5px rgba(0,0,0,0.9); z-index: 100; }
+        .dmg-text { position: absolute; font-weight: 900; animation: floatDmg 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; pointer-events: none; text-shadow: 0px 3px 5px rgba(0,0,0,0.9); z-index: 100; transition: color 0.1s; }
         @keyframes floatDmg { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { transform: translateY(-30px) scale(1.4); opacity: 1; } 100% { transform: translateY(-80px) scale(1); opacity: 0; } }
         
         .shake-anim { animation: hitShake 0.15s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes hitShake { 25% { transform: translate(-4px, 4px) rotate(-2deg); } 50% { transform: translate(4px, -3px) rotate(2deg); } 75% { transform: translate(-4px, -4px) rotate(0deg); } }
         .hitstop { filter: brightness(1.5) contrast(1.2); transform: scale(0.98); }
         
-        .pity-bar { height: 6px; border-radius: 3px; background: #27272a; overflow: hidden; margin-top: 5px; position: relative; }
+        .pity-bar { height: 6px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin-top: 5px; position: relative; }
         .pity-fill { height: 100%; transition: width 0.3s; }
-        .showcase-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px; margin-bottom: 15px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid #27272a; scroll-behavior: smooth; }
+        .showcase-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 10px; margin-bottom: 15px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid var(--border-color); scroll-behavior: smooth; }
         
         .rbx-btn { background: #1e293b; border: 1px solid #334155; border-radius: 10px; color: white; padding: 12px; font-weight: 800; cursor: pointer; transition: 0.1s; display: flex; align-items: center; justify-content: center; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 0 rgba(0,0,0,0.4); min-height: 44px; }
         .rbx-btn:active { transform: translateY(4px); box-shadow: 0 0 0 rgba(0,0,0,0.4); filter: brightness(0.8); }
@@ -751,7 +751,7 @@ export default function App() {
         .rbx-btn-purple { background: linear-gradient(180deg, #a855f7, #7e22ce); border-color: #581c87; color: #fff; }
         .rbx-btn-orange { background: linear-gradient(180deg, #f97316, #c2410c); border-color: #9a3412; color: #fff; }
 
-        .rbx-panel { background: rgba(24, 24, 27, 0.95); border: 1px solid #27272a; border-radius: 16px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 20px rgba(0,0,0,0.5); }
+        .rbx-panel { background: rgba(24, 24, 27, 0.95); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 20px rgba(0,0,0,0.5); }
         .ios-tap { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         
@@ -786,7 +786,7 @@ export default function App() {
         .pet-aura-2 { box-shadow: 0 0 10px rgba(34,197,94,0.5); animation: petPulse 2s infinite; }
         .pet-aura-3 { box-shadow: 0 0 15px rgba(59,130,246,0.8), inset 0 0 5px rgba(59,130,246,0.5); border: 1px solid #3b82f6 !important; }
         .pet-aura-4 { box-shadow: 0 0 20px rgba(0,0,0,0.9), inset 0 0 10px rgba(239,68,68,0.5); border: 2px solid #000 !important; animation: hakiPulse 1.5s infinite alternate; }
-        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(#18181b, #18181b) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
+        .pet-aura-5 { box-shadow: 0 0 30px rgba(244,114,182,0.8); border: 2px solid transparent !important; background: linear-gradient(var(--bg-secondary), var(--bg-secondary)) padding-box, linear-gradient(45deg, #f472b6, #38bdf8, #f472b6) border-box; animation: shatterEX 1s infinite alternate, divineFloat 2s infinite alternate; }
       `}</style>
 
       {/* --- CARTE DE PROFIL MODAL --- */}
@@ -806,7 +806,7 @@ export default function App() {
             {profileTab === "stats" && (
               <div className="fade-in">
                 <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "20px" }}>
-                  <div className={`frame-${player.profile.frame}`} style={{ fontSize: "60px", background: "#18181b", padding: "10px", borderRadius: "15px" }}>{player.profile.avatar}</div>
+                  <div className={`frame-${player.profile.frame}`} style={{ fontSize: "60px", background: "var(--bg-secondary)", padding: "10px", borderRadius: "15px" }}>{player.profile.avatar}</div>
                   <div>
                     <div style={{ fontSize: "24px", fontWeight: "900", color: "#fff" }}>{player.profile.username} {player.profile.flag}</div>
                     <div className="rainbow-text" style={{ fontSize: "14px" }}>{player.profile.titleEquipped}</div>
@@ -814,11 +814,11 @@ export default function App() {
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-                  <div style={{ background: "#18181b", padding: "10px", borderRadius: "8px", border: "1px solid #27272a" }}>
+                  <div style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
                     <span style={{ fontSize: "10px", color: "#9ca3af", display: "block" }}>PUISSANCE</span>
                     <span className={getGrade(getDmg()).isRainbow ? "rainbow-text" : ""} style={{ fontSize: "18px", fontWeight: "bold", color: getGrade(getDmg()).color }}>{Format.num(getDmg())}</span>
                   </div>
-                  <div style={{ background: "#18181b", padding: "10px", borderRadius: "8px", border: "1px solid #27272a" }}>
+                  <div style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
                     <span style={{ fontSize: "10px", color: "#9ca3af", display: "block" }}>PRIME</span>
                     <span style={{ fontSize: "18px", fontWeight: "bold", color: "#ef4444" }}>💀 {Format.num(player.bounty)}</span>
                   </div>
@@ -830,18 +830,18 @@ export default function App() {
               <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                 <div>
                   <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Nom d'Équipage</span>
-                  <input type="text" value={player.profile.username} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, username: e.target.value}}))} style={{ width: "100%", background: "#09090b", border: "1px solid #27272a", color: "#fff", padding: "10px", borderRadius: "8px", marginTop: "5px" }} maxLength={15} />
+                  <input type="text" value={player.profile.username} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, username: e.target.value}}))} style={{ width: "100%", background: "var(--bg-primary)", border: "1px solid var(--border-color)", color: "#fff", padding: "10px", borderRadius: "8px", marginTop: "5px" }} maxLength={15} />
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
                     <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Titre Actif</span>
-                    <select value={player.profile.titleEquipped} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, titleEquipped: e.target.value}}))} style={{ width: "100%", background: "#09090b", color: "#fff", border: "1px solid #27272a", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
+                    <select value={player.profile.titleEquipped} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, titleEquipped: e.target.value}}))} style={{ width: "100%", background: "var(--bg-primary)", color: "#fff", border: "1px solid var(--border-color)", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
                       {player.profile.titles.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                   </div>
                   <div>
                     <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Cadre (Frame)</span>
-                    <select value={player.profile.frame} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, frame: e.target.value}}))} style={{ width: "100%", background: "#09090b", color: "#fff", border: "1px solid #27272a", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
+                    <select value={player.profile.frame} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, frame: e.target.value}}))} style={{ width: "100%", background: "var(--bg-primary)", color: "#fff", border: "1px solid var(--border-color)", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
                       <option value="default">Défaut</option><option value="gold">Or</option><option value="neon">Néon</option><option value="flame">Flammes</option>
                     </select>
                   </div>
@@ -850,7 +850,7 @@ export default function App() {
                   <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold", display: "block", marginBottom: "5px" }}>Avatar</span>
                   <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
                     {["🏴‍☠️", "💀", "🦊", "🐯", "🤖", "⚔️", "⚓", "👑", "🐉", "🤡"].map(av => (
-                      <div key={av} onClick={() => setPlayer(p => ({...p, profile: {...p.profile, avatar: av}}))} style={{ fontSize: "24px", background: player.profile.avatar === av ? "#3b82f6" : "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #27272a", cursor: "pointer" }}>{av}</div>
+                      <div key={av} onClick={() => setPlayer(p => ({...p, profile: {...p.profile, avatar: av}}))} style={{ fontSize: "24px", background: player.profile.avatar === av ? "#3b82f6" : "var(--bg-secondary)", padding: "8px", borderRadius: "8px", border: "1px solid var(--border-color)", cursor: "pointer" }}>{av}</div>
                     ))}
                   </div>
                 </div>
@@ -868,8 +868,8 @@ export default function App() {
             <div>
               <div style={{ fontSize: "13px", fontWeight: "900", color: getTitle(player.bounty).color }}>{player.profile.titleEquipped}</div>
               <div style={{ display: "flex", alignItems: "center", gap: "5px", marginTop: "2px" }}>
-                <span style={{ fontSize: "10px", fontWeight: "bold", color: "#f8fafc" }}>Niv. {player.level.current}</span>
-                <div style={{ width: "60px", height: "6px", background: "#27272a", borderRadius: "3px", overflow: "hidden" }}>
+                <span style={{ fontSize: "10px", fontWeight: "bold", color: "#f8fafc" }}>Niv. {player.level.current} ({Format.num(player.level.xp)} / {Format.num(player.level.max)})</span>
+                <div style={{ width: "60px", height: "6px", background: "var(--border-color)", borderRadius: "3px", overflow: "hidden" }}>
                   <div style={{ width: `${(player.level.xp / player.level.max) * 100}%`, background: "#38bdf8", height: "100%" }} />
                 </div>
               </div>

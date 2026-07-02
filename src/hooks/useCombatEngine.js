@@ -91,11 +91,11 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
   const dps = Math.floor(getDmg() * 2);
 
   const executeCard = (card, index, combatState) => {
-    if (!battle || combatState.energy < card.cost) return;
+    if (!battle || !combatState || combatState.energy < card.cost) return;
     playClick();
 
     // Consume Card & Energy
-    setCombatDeck(prev => prev.filter((_, i) => i !== index));
+    setCombatDeck(prev => (Array.isArray(prev) ? prev.filter((_, i) => i !== index) : []));
     if (card.hasDB && dragonBalls < 7) setDragonBalls(prev => prev + 1);
 
     // Effet Éveil (Green Card)

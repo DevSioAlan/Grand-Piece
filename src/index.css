@@ -1,4 +1,4 @@
-:root {
+:root, .theme-pirate {
   /* Default Pirate (Sombre) Theme */
   --bg-primary: #050505;
   --bg-secondary: #18181b;
@@ -46,6 +46,21 @@
   --text-secondary: #94a3b8;
   --accent: #8b5cf6;
   color-scheme: dark;
+}
+
+.premium-shadow {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+}
+
+.vfx-strike {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+  animation: strike-pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes strike-pop {
+  0% { transform: scale(0.5); opacity: 0; }
+  50% { transform: scale(1.5); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
 }
 
 body {

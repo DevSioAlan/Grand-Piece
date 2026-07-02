@@ -34,7 +34,7 @@ export function CombatView({
 
                     <div style={{ display: "grid", gap: "10px" }}>
                       {SEAS[player.sea].map((e, idx) => (
-                        <div key={idx} onClick={() => { playClick(); setBattle({ ...e, hp: e.hp, maxHp: e.hp }); }} className="rbx-btn ios-tap" style={{ justifyContent: "space-between", background: "#18181b", padding: "15px", border: `1px solid ${ELEMENTS[e.elem]?.color || '#333'}` }}>
+                        <div key={idx} onClick={() => { playClick(); setBattle({ ...e, hp: e.hp, maxHp: e.hp }); }} className="rbx-btn ios-tap" style={{ justifyContent: "space-between", background: "var(--bg-secondary)", padding: "15px", border: `1px solid ${ELEMENTS[e.elem]?.color || '#333'}` }}>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                             <span style={{ fontSize: "24px" }}>{e.emoji}</span>
                             <div style={{ textAlign: "left", textTransform: "none", lineHeight: "1.2" }}>
@@ -91,7 +91,7 @@ export function CombatView({
 
             {/* UNIFIED COMBAT ARENA (When battle is active) */}
             {battle && (
-              <div className="rbx-panel fade-in" style={{ padding: "15px", display: "flex", flexDirection: "column", flex: 1, border: gameMode === "tower" ? "2px solid #a855f7" : gameMode === "pvp" ? "2px solid #ef4444" : "1px solid #27272a" }}>
+              <div className="rbx-panel fade-in" style={{ padding: "15px", display: "flex", flexDirection: "column", flex: 1, border: gameMode === "tower" ? "2px solid #a855f7" : gameMode === "pvp" ? "2px solid #ef4444" : "1px solid var(--border-color)" }}>
                 <div className="fade-in" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
 
                   {/* ENNEMY HP BAR */}
@@ -99,15 +99,15 @@ export function CombatView({
                     <span style={{ color: "#22c55e", fontSize: "12px", fontWeight: "bold" }}>Vous: {Format.num(player.playerHp.current)} PV</span>
                     <span style={{ color: battle.isBoss ? "#ef4444" : ELEMENTS[battle.elem]?.color || "#eab308", fontSize: "12px", fontWeight: "bold" }}>{battle.name} {ELEMENTS[battle.elem]?.icon}</span>
                   </div>
-                  <div style={{ width: "100%", background: "#27272a", height: "12px", borderRadius: "4px", marginBottom: "10px", position: "relative", overflow: "hidden" }}>
+                  <div style={{ width: "100%", background: "var(--border-color)", height: "12px", borderRadius: "4px", marginBottom: "10px", position: "relative", overflow: "hidden" }}>
                     <div style={{ width: `${(battle.hp / battle.maxHp) * 100}%`, background: gameMode === "tower" ? "#a855f7" : gameMode === "pvp" || battle.isBoss ? "#ef4444" : "#eab308", height: "100%", transition: "0.1s" }} />
                     <span style={{ position: "absolute", width: "100%", top: 0, left: 0, textAlign: "center", fontSize: "8px", lineHeight: "12px", fontWeight: "900", textShadow: "0 1px 2px #000" }}>{Format.num(battle.hp)} / {Format.num(battle.maxHp)}</span>
                   </div>
 
                   {/* ARENA (Swipable for Vanish) */}
-                  <div onClick={executeVanish} className={`${shake ? 'shake-anim' : ''} ${hitstop ? 'hitstop' : ''} ios-tap`} style={{ flex: 1, minHeight: "200px", position: "relative", background: gameMode === "tower" ? "radial-gradient(circle, #3b0764 0%, #18181b 70%)" : gameMode === "pvp" ? "radial-gradient(circle, #7f1d1d 0%, #18181b 70%)" : "radial-gradient(circle, #27272a 0%, #18181b 70%)", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", border: battle.isBoss ? "2px solid #7f1d1d" : gameMode === "tower" ? "2px solid #7e22ce" : gameMode === "pvp" ? "2px solid #dc2626" : "2px solid #334155", overflow: "hidden" }}>
+                  <div onClick={executeVanish} className={`${shake ? 'shake-anim' : ''} ${hitstop ? 'hitstop' : ''} ios-tap`} style={{ flex: 1, minHeight: "200px", position: "relative", background: gameMode === "tower" ? "radial-gradient(circle, #3b0764 0%, var(--bg-secondary) 70%)" : gameMode === "pvp" ? "radial-gradient(circle, #7f1d1d 0%, var(--bg-secondary) 70%)" : "radial-gradient(circle, var(--border-color) 0%, var(--bg-secondary) 70%)", borderRadius: "16px", display: "flex", alignItems: "center", justifyContent: "center", border: battle.isBoss ? "2px solid #7f1d1d" : gameMode === "tower" ? "2px solid #7e22ce" : gameMode === "pvp" ? "2px solid #dc2626" : "2px solid #334155", overflow: "hidden" }}>
                     <span style={{ fontSize: "100px", filter: combatState.stunTime > 0 ? "grayscale(1) brightness(0.5)" : "none", transition: "0.2s" }}>{battle.emoji}</span>
-                    {floatingTexts.map(t => (<span key={t.id} className="dmg-text" style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
+                    {floatingTexts.map(t => (<span key={t.id} className={`dmg-text ${t.isCrit ? 'vfx-strike' : ''}`} style={{ left: t.x, top: t.y, color: t.color, fontSize: t.isCrit ? "28px" : "18px" }}>{t.text}</span>))}
 
                     {/* DBL Elements */}
                     {combatState.comboCount > 1 && (
@@ -125,8 +125,8 @@ export function CombatView({
                   <div style={{ marginTop: "15px" }}>
                     {/* KI GAUGE */}
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "#18181b", border: "2px solid #3b82f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "bold" }}>{Math.floor(combatState.energy)}</div>
-                      <div style={{ flex: 1, background: "#18181b", height: "14px", borderRadius: "7px", overflow: "hidden", border: "1px solid #334155" }}>
+                      <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "var(--bg-secondary)", border: "2px solid #3b82f6", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "10px", fontWeight: "bold" }}>{Math.floor(combatState.energy)}</div>
+                      <div style={{ flex: 1, background: "var(--bg-secondary)", height: "14px", borderRadius: "7px", overflow: "hidden", border: "1px solid #334155" }}>
                         <div style={{ width: `${combatState.energy}%`, background: "#3b82f6", height: "100%", transition: "0.2s" }}></div>
                       </div>
                     </div>
@@ -145,7 +145,7 @@ export function CombatView({
                       </div>
 
                       {/* RISING RUSH BUTTON */}
-                      <div onClick={executeRisingRush} className="ios-tap" style={{ width: "70px", height: "70px", borderRadius: "50%", background: dragonBalls >= 7 ? "radial-gradient(circle, #facc15, #a16207)" : "#18181b", border: `2px solid ${dragonBalls >= 7 ? '#fff' : '#334155'}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: dragonBalls >= 7 ? "pointer" : "default", boxShadow: dragonBalls >= 7 ? "0 0 20px #eab308" : "none", opacity: dragonBalls === 0 ? 0.5 : 1 }}>
+                      <div onClick={executeRisingRush} className="ios-tap" style={{ width: "70px", height: "70px", borderRadius: "50%", background: dragonBalls >= 7 ? "radial-gradient(circle, #facc15, #a16207)" : "var(--bg-secondary)", border: `2px solid ${dragonBalls >= 7 ? '#fff' : '#334155'}`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: dragonBalls >= 7 ? "pointer" : "default", boxShadow: dragonBalls >= 7 ? "0 0 20px #eab308" : "none", opacity: dragonBalls === 0 ? 0.5 : 1 }}>
                         <span style={{ fontSize: "20px", filter: "drop-shadow(0 0 5px #000)" }}>{dragonBalls >= 7 ? "🐉" : "⭐"}</span>
                         <span style={{ fontSize: "12px", fontWeight: "900", color: "#fff", textShadow: "0 1px 2px #000" }}>{dragonBalls}/7</span>
                       </div>
