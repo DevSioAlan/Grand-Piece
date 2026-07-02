@@ -76,7 +76,11 @@ export default function App() {
   const bgmRef = useRef(null);
 
   // --- INIT & TOASTS ---
-
+  useEffect(() => {
+    // Safe-area fix to avoid CSS crashing on specific devices
+    document.documentElement.style.setProperty('--safe-area-top', 'env(safe-area-inset-top, 20px)');
+    document.documentElement.style.setProperty('--safe-area-bottom', 'env(safe-area-inset-bottom, 20px)');
+  }, []);
 
   const addToast = (msg, color="#3b82f6") => {
     const id = Date.now() + Math.random();
