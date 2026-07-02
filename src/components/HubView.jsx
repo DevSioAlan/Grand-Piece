@@ -73,6 +73,11 @@ export function HubView({
                   <p style={{ fontSize: "12px", color: "#cbd5e1" }}>Boss: Saturn | Requis: Niv. 100</p>
                   <button onClick={() => { playClick(); startRaid(); }} className="rbx-btn rbx-btn-green" style={{ width: "100%" }}>ENTRER DANS LE RAID</button>
                 </div>
+                <div style={{ border: "1px solid #a855f7", background: "linear-gradient(180deg, #1e1b4b, #3b0764)", padding: "15px", borderRadius: "12px", textAlign: "center", marginTop: "15px" }}>
+                  <h4 style={{ margin: 0, color: "#d8b4fe" }}>🌌 FAILLE DE DISTORSION</h4>
+                  <p style={{ fontSize: "12px", color: "#cbd5e1" }}>Boss: Entité Cosmique | Gain: Antimatière</p>
+                  <button onClick={() => { playClick(); setGameMode("idle"); setBattle({ name: "Abyss Cosmic Boss", emoji: "🌌", elem: "INT", hp: 50000000 * player.rebirth || 50000000, maxHp: 50000000 * player.rebirth || 50000000, beli: 0, xp: 0, isBoss: true, isAbyss: true }); setMainTab("combat"); }} className="rbx-btn rbx-btn-purple" style={{ width: "100%", marginTop: "5px" }}>OUVRIR LA FAILLE</button>
+                </div>
               </div>
             )}
 

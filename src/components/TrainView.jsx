@@ -3,7 +3,8 @@ import { Format, REBIRTH_SHOP } from '../data/constants';
 
 export function TrainView({
     mainTab, player, playClick, trainTab, setTrainTab,
-    trainStat, buyIncrementalUpgrade, buyHakiTalent, buyRebirthUpgrade, handleRebirth
+    trainStat, buyIncrementalUpgrade, buyHakiTalent, buyRebirthUpgrade, handleRebirth,
+    setPlayer
 }) {
     if (mainTab !== "train") return null;
 
@@ -13,6 +14,7 @@ export function TrainView({
               <button onClick={() => { playClick(); setTrainTab("stats"); }} className={`rbx-btn ${trainTab==='stats'?'rbx-btn-blue':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>ENTRAÎNEMENT</button>
               <button onClick={() => { playClick(); setTrainTab("upgrades"); }} className={`rbx-btn ${trainTab==='upgrades'?'rbx-btn-gold':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>UPGRADES INC.</button>
               <button onClick={() => { playClick(); setTrainTab("rebirth"); }} className={`rbx-btn ${trainTab==='rebirth'?'rbx-btn-purple':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>ASCENSION</button>
+              <button onClick={() => { playClick(); setTrainTab("distortions"); }} className={`rbx-btn ${trainTab==='distortions'?'rbx-btn-orange':''}`} style={{flex:"0 0 auto", padding:"8px 12px", fontSize:"10px"}}>DISTORSIONS</button>
             </div>
 
             {trainTab === "stats" && (
@@ -110,7 +112,69 @@ export function TrainView({
                       )
                     })}
 
+
+                    {/* Automatisation Fantôme Node */}
+                    <div style={{ position: "relative", display: "flex", justifyContent: "center", width: "100%", gridColumn: "span 2", marginTop: "20px" }}>
+                        <div style={{ position: "absolute", top: "-20px", left: "50%", width: "2px", height: "20px", background: (player.upgrades.ghostAuto || 0) > 0 ? "#06b6d4" : "#3f3f46", transform: "translateX(-50%)", zIndex: 1 }}></div>
+                        <div style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "12px", border: `2px solid ${(player.upgrades.ghostAuto || 0) > 0 ? '#06b6d4' : '#3f3f46'}`, width: "160px", display: "flex", flexDirection: "column", alignItems: "center", boxShadow: (player.upgrades.ghostAuto || 0) > 0 ? `0 0 15px #06b6d433` : "none", zIndex: 2 }}>
+                        <div style={{ fontSize: "12px", fontWeight: "bold", color: "#06b6d4", textAlign: "center" }}>Automatisation Fantôme</div>
+                        <div style={{ fontSize: "9px", color: "#a1a1aa", marginBottom: "5px", textAlign: "center" }}>Macro Organique (Délais Humains)</div>
+                        <button onClick={() => {
+                            const cost = 10000000;
+                            if (player.beli >= cost && !(player.upgrades.ghostAuto > 0)) {
+                                playClick();
+                                setPlayer(p => ({...p, beli: p.beli - cost, upgrades: {...p.upgrades, ghostAuto: 1}}));
+                            }
+                        }} disabled={(player.upgrades.ghostAuto || 0) > 0 || player.beli < 10000000} className="rbx-btn" style={{ padding: "4px 8px", fontSize: "9px", background: (player.upgrades.ghostAuto || 0) > 0 ? "#374151" : player.beli >= 10000000 ? "#06b6d4" : "#374151", color: "#fff", width: "100%", fontWeight: "bold", border: "none" }}>
+                            {(player.upgrades.ghostAuto || 0) > 0 ? "DÉBLOQUÉ" : Format.num(10000000) + " ฿"}
+                        </button>
+                        </div>
+                    </div>
+
                   </div>
+                </div>
+              </div>
+            )}
+
+
+            {trainTab === "distortions" && (
+              <div className="rbx-panel fade-in" style={{ background: "linear-gradient(135deg, #1e1b4b, #3b0764)", border: "2px solid #a855f7" }}>
+                <h3 style={{ marginTop: 0, color: "#d8b4fe", textAlign: "center" }}>Failles de Distorsion</h3>
+                <div style={{ textAlign: "center", marginBottom: "20px", background: "rgba(0,0,0,0.4)", padding: "15px", borderRadius: "12px", border: "1px solid rgba(168,85,247,0.5)" }}>
+                  <span style={{ fontSize: "14px", color: "#cbd5e1" }}>Antimatière Disponible</span>
+                  <div style={{ fontSize: "32px", color: "#d8b4fe", fontWeight: "900", margin: "5px 0" }}>{player.antimatter || 0} 🌌</div>
+                </div>
+
+                <div style={{ display: "grid", gap: "12px" }}>
+                    <div style={{ background: "rgba(0,0,0,0.6)", padding: "15px", borderRadius: "10px", borderLeft: "4px solid #a855f7", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "15px", fontWeight: "900", color: "#d8b4fe" }}>Rendement AFK</div>
+                          <div style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>+10% gains AFK par niveau (Niv. {player.distortions?.afkYield || 0})</div>
+                        </div>
+                        <button onClick={() => {
+                            if ((player.antimatter || 0) >= 1) {
+                                playClick();
+                                setPlayer(p => ({...p, antimatter: (p.antimatter || 0) - 1, distortions: {...(p.distortions || {}), afkYield: (p.distortions?.afkYield || 0) + 1}}));
+                            }
+                        }} className="rbx-btn rbx-btn-purple" style={{ padding: "8px 16px", fontSize: "12px" }}>
+                          1 🌌
+                        </button>
+                    </div>
+
+                    <div style={{ background: "rgba(0,0,0,0.6)", padding: "15px", borderRadius: "10px", borderLeft: "4px solid #22c55e", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: "15px", fontWeight: "900", color: "#bbf7d0" }}>Résonance Temporelle</div>
+                          <div style={{ fontSize: "11px", color: "#a1a1aa", marginTop: "2px" }}>-5% coût en énergie des cartes (Niv. {player.distortions?.cdReduction || 0}/10)</div>
+                        </div>
+                        <button onClick={() => {
+                            if ((player.antimatter || 0) >= 1 && (player.distortions?.cdReduction || 0) < 10) {
+                                playClick();
+                                setPlayer(p => ({...p, antimatter: (p.antimatter || 0) - 1, distortions: {...(p.distortions || {}), cdReduction: (p.distortions?.cdReduction || 0) + 1}}));
+                            }
+                        }} disabled={(player.distortions?.cdReduction || 0) >= 10} className="rbx-btn rbx-btn-green" style={{ padding: "8px 16px", fontSize: "12px" }}>
+                          { (player.distortions?.cdReduction || 0) >= 10 ? "MAX" : "1 🌌" }
+                        </button>
+                    </div>
                 </div>
               </div>
             )}

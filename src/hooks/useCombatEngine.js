@@ -4,7 +4,7 @@ import { PETS_DB } from "../data/pets";
 import { REBIRTH_SHOP, getElementAdvantage, TITLES_BUFFS } from "../data/constants";
 import { CREW_MEMBERS, SYNERGIES } from "../data/combat";
 
-export function useCombatEngine(player, battle, setBattle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText, handleVictory) {
+export function useCombatEngine(player, setPlayer, battle, setBattle, setCombatState, dragonBalls, setDragonBalls, setCombatDeck, setShake, setHitstop, playClick, spawnText, handleVictory) {
 
   const getEquipped = (type) => {
     let equipId = player.equipped[`${type.toLowerCase()}Id`];
@@ -91,7 +91,8 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
   const dps = Math.floor(getDmg() * 2);
 
   const executeCard = (card, index, combatState) => {
-    if (!battle || !combatState || combatState.energy < card.cost) return;
+    const energyCost = Math.floor(card.cost * (1 - (player.distortions?.cdReduction || 0) * 0.05));
+    if (!battle || !combatState || combatState.energy < energyCost) return;
     playClick();
 
     // Consume Card & Energy
@@ -100,7 +101,7 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
 
     // Effet Éveil (Green Card)
     if (card.id === "green") {
-      setCombatState(prev => ({ ...prev, energy: Math.min(100, prev.energy - card.cost + 40), vanishing: 100 }));
+      setCombatState(prev => ({ ...prev, energy: Math.min(100, prev.energy - energyCost + 40), vanishing: 100 }));
       spawnText("ÉVEIL! ", 0, false, "#22c55e");
       return;
     }
@@ -109,6 +110,12 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
 
     let dmg = getDmg() * card.mult * (1 + (combatState.comboCount * 0.1));
 
+    if (player.playerHp.current < player.playerHp.max * 0.2 || combatState.isBloodlust) {
+      if (!combatState.isBloodlust) setCombatState(prev => ({ ...prev, isBloodlust: true }));
+      dmg *= 1.5;
+      const healAmount = Math.floor(dmg * 0.15);
+      setPlayer(p => ({ ...p, playerHp: { ...p.playerHp, current: Math.min(p.playerHp.max, p.playerHp.current + healAmount) } }));
+    }
 
     let stun = card.id === "special" ? 2 : 0;
 
@@ -116,11 +123,11 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
     if (card.id === "counter") {
         if (combatState.enemyAttacking) {
             spawnText("CONTRE PARFAIT! ", 0, true, "#38bdf8");
-            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: 2, enemyAttacking: false }));
+            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - energyCost), stunTime: 2, enemyAttacking: false }));
             return { finalDmg: 0, stun: 2 };
         } else {
             spawnText("RATÉ... ", 0, false, "#9ca3af");
-            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), comboCount: 0 }));
+            setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - energyCost), comboCount: 0 }));
             return { finalDmg: 0, stun: 0 };
         }
     }
@@ -132,7 +139,7 @@ export function useCombatEngine(player, battle, setBattle, setCombatState, drago
     let isCrit = Math.random() < 0.1 + (player.stats.luck * 0.01);
     let finalDmg = Math.floor(isCrit ? dmg * 2 : dmg);
 
-    setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - card.cost), stunTime: stun > 0 ? stun : prev.stunTime }));
+    setCombatState(prev => ({ ...prev, energy: Math.max(0, prev.energy - energyCost), stunTime: stun > 0 ? stun : prev.stunTime }));
 
     spawnText(card.icon + " ", finalDmg, isCrit, card.id==="special"?"#3b82f6":card.id==="blast"?"#eab308":"#fff");
 

@@ -1,6 +1,8 @@
 
 import React from 'react';
-import { Format, getGrade, TITLES_BUFFS } from '../data/constants';
+import { Format, getGrade, TITLES_BUFFS, RARITY } from '../data/constants';
+import { ITEMS_DB } from '../data/items';
+import { CREW_MEMBERS } from '../data/combat';
 
 export function ProfileModal({
     showProfile, setShowProfile, player, profileTab, setProfileTab, setPlayer, getDmg
@@ -19,6 +21,7 @@ export function ProfileModal({
             <div style={{ display: "flex", gap: "10px", marginBottom: "15px" }}>
               <button onClick={() => setProfileTab("stats")} className={`rbx-btn ${profileTab==='stats'?'rbx-btn-blue':''}`} style={{flex:1, padding:"8px", fontSize:"10px"}}>STATS</button>
               <button onClick={() => setProfileTab("edit")} className={`rbx-btn ${profileTab==='edit'?'rbx-btn-green':''}`} style={{flex:1, padding:"8px", fontSize:"10px"}}>ÉDITER</button>
+              <button onClick={() => setProfileTab("analytics")} className={`rbx-btn ${profileTab==='analytics'?'rbx-btn-purple':''}`} style={{flex:1, padding:"8px", fontSize:"10px"}}>ANALYTIQUE</button>
             </div>
 
             {profileTab === "stats" && (
@@ -39,6 +42,59 @@ export function ProfileModal({
                   <div className="premium-shadow" style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid #ef4444", textAlign: "center" }}>
                     <span style={{ fontSize: "10px", color: "#9ca3af", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>💀 PRIME</span>
                     <span style={{ fontSize: "22px", fontWeight: "900", color: "#ef4444", textShadow: "0 0 10px #ef4444" }}>{Format.num(player.bounty)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+
+            {profileTab === "analytics" && (
+              <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
+                <div className="premium-shadow" style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid #a855f7" }}>
+                  <span style={{ fontSize: "12px", color: "#d8b4fe", fontWeight: "bold", display: "block" }}>Statistiques de Combat</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px", fontSize: "14px" }}>
+                    <span>DPS Moyen:</span>
+                    <span style={{ fontWeight: "bold", color: "#fff" }}>{Format.num(getDmg() * 2)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px", fontSize: "14px", alignItems: "center" }}>
+                    <span>Taux de Victoire Simulé:</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                       <select value={player.settings?.aiTactic || 'aggressif'} onChange={(e) => setPlayer(p => ({...p, settings: {...(p.settings||{}), aiTactic: e.target.value}}))} style={{ background: "var(--bg-primary)", color: "#fff", border: "1px solid var(--border-color)", padding: "4px", borderRadius: "4px", fontSize: "10px" }}>
+                         <option value="aggressif">Aggressif</option>
+                         <option value="defensif">Défensif</option>
+                         <option value="equilibrez">Équilibré</option>
+                       </select>
+                       <span style={{ fontWeight: "bold", color: (player.settings?.aiTactic || 'aggressif') === 'aggressif' ? '#ef4444' : '#22c55e' }}>
+                         { (player.settings?.aiTactic || 'aggressif') === 'aggressif' ? '68%' : (player.settings?.aiTactic || 'aggressif') === 'defensif' ? '82%' : '75%' }
+                       </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="premium-shadow" style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid #eab308" }}>
+                  <span style={{ fontSize: "12px", color: "#fef08a", fontWeight: "bold", display: "block" }}>Historique RNG</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px", fontSize: "14px" }}>
+                    <span>Invocations Totales:</span>
+                    <span style={{ fontWeight: "bold", color: "#fff" }}>{Format.num(player.profile?.totalSummons || 0)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px", fontSize: "14px" }}>
+                    <span>Taux EX/Divin Obtenu:</span>
+                    <span style={{ fontWeight: "bold", color: "#38bdf8" }}>{ ((player.profile?.totalSummons || 0) > 0 ? (((player.inventory.filter(i => { const d = i.itemId ? ITEMS_DB[i.itemId] : null; return d && (d.rarity === 'EX' || d.rarity === 'Divine'); }).length) / player.profile.totalSummons) * 100).toFixed(2) : 0) }%</span>
+                  </div>
+                </div>
+
+                <div className="premium-shadow" style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid #22c55e" }}>
+                  <span style={{ fontSize: "12px", color: "#bbf7d0", fontWeight: "bold", display: "block" }}>Valeur Nette du Compte</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: "5px", fontSize: "18px" }}>
+                    <span>Valeur Estimée:</span>
+                    <span style={{ fontWeight: "bold", color: "#22c55e" }}>
+                        {Format.num(
+                           (player.beli || 0) +
+                           (player.gems || 0) * 100 +
+                           (player.inventory || []).reduce((acc, item) => { const d = item.itemId ? ITEMS_DB[item.itemId] : null; return acc + (d ? (RARITY[d.rarity]?.val || 1) * 5000 : 0); }, 0) +
+                           (player.crewSetup?.active || []).concat(player.crewSetup?.support || []).filter(Boolean).reduce((acc, id) => { const d = CREW_MEMBERS.find(c=>c.id===id); return acc + (d ? (RARITY[d.rarity]?.val || 1) * 10000 : 0); }, 0)
+                        )} ฿
+                    </span>
                   </div>
                 </div>
               </div>
