@@ -27,7 +27,7 @@ export function RosterView({
                         const id = player.crewSetup.active[i]; const char = id ? CREW_MEMBERS.find(m => m.id === id) : null;
                         const isSelected = crewSelectSlot?.type === 'active' && crewSelectSlot?.index === i;
                         return (
-                          <div key={`act_${i}`} onClick={() => { playClick(); setCrewSelectSlot({type: 'active', index: i}); }} style={{ flex: 1, height: "70px", background: "#18181b", border: isSelected ? "2px solid #38bdf8" : char ? `1px solid ${RARITY[char.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                          <div key={`act_${i}`} onClick={() => { playClick(); setCrewSelectSlot({type: 'active', index: i}); }} style={{ flex: 1, height: "70px", background: "var(--bg-secondary)", border: isSelected ? "2px solid #38bdf8" : char ? `1px solid ${RARITY[char.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
                             <span style={{ fontSize: "24px" }}>{char ? char.img : "+"}</span>
                           </div>
                         )
@@ -41,7 +41,7 @@ export function RosterView({
                         const id = player.crewSetup.support[i]; const char = id ? CREW_MEMBERS.find(m => m.id === id) : null;
                         const isSelected = crewSelectSlot?.type === 'support' && crewSelectSlot?.index === i;
                         return (
-                          <div key={`sup_${i}`} onClick={() => { playClick(); setCrewSelectSlot({type: 'support', index: i}); }} style={{ flex: 1, height: "60px", background: "#09090b", border: isSelected ? "2px solid #22c55e" : char ? `1px solid ${RARITY[char.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.8, position: "relative" }}>
+                          <div key={`sup_${i}`} onClick={() => { playClick(); setCrewSelectSlot({type: 'support', index: i}); }} style={{ flex: 1, height: "60px", background: "var(--bg-primary)", border: isSelected ? "2px solid #22c55e" : char ? `1px solid ${RARITY[char.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", opacity: 0.8, position: "relative" }}>
                             <span style={{ fontSize: "20px" }}>{char ? char.img : "+"}</span>
                           </div>
                         )
@@ -62,8 +62,9 @@ export function RosterView({
                         const char = CREW_MEMBERS.find(c=>c.id===id); if(!char) return null;
                         const isEq = player.crewSetup.active.includes(id) || player.crewSetup.support.includes(id);
                         return (
-                          <div key={id} onClick={() => { if (!isEq) { playClick(); setPlayer(p => { let n = { active: [...p.crewSetup.active], support: [...p.crewSetup.support] }; n[crewSelectSlot.type][crewSelectSlot.index] = id; return {...p, crewSetup: n}; }); setCrewSelectSlot(null); } }} className={char.rarity === "EX" ? "ex-shatter" : ""} style={{ background: "#18181b", border: `1px solid ${RARITY[char.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1 }}>
+                          <div key={id} onClick={() => { if (!isEq) { playClick(); setPlayer(p => { let n = { active: [...p.crewSetup.active], support: [...p.crewSetup.support] }; n[crewSelectSlot.type][crewSelectSlot.index] = id; return {...p, crewSetup: n}; }); setCrewSelectSlot(null); } }} className={char.rarity === "EX" ? "ex-shatter" : ""} style={{ background: "var(--bg-secondary)", border: `1px solid ${RARITY[char.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1 }}>
                             <div style={{ fontSize: "24px", marginBottom: "2px" }}>{char.img}</div><div style={{ fontSize: "8px", color: "#fff", whiteSpace: "nowrap", overflow: "hidden" }}>{char.name}</div>
+                            <div style={{ fontSize: "7px", color: "#38bdf8", marginTop: "2px", fontWeight: "bold" }}>XP: {player.memberFragments?.[id] || 0} / 50</div>
                           </div>
                         )
                       })}
@@ -82,7 +83,7 @@ export function RosterView({
                       const instId = player.pets.active[i]; const petItem = instId ? player.pets.inventory.find(p => p.instanceId === instId) : null;
                       const petData = petItem ? PETS_DB[petItem.itemId] : null; const isSelected = petSelectSlot === i;
                       return (
-                        <div key={`pet_${i}`} onClick={() => { playClick(); setPetSelectSlot(i); }} className={petItem ? `pet-aura-${petItem.stars||1}` : ""} style={{ flex: 1, height: "80px", background: "#18181b", border: isSelected ? "2px solid #22c55e" : petData ? `1px solid ${RARITY[petData.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
+                        <div key={`pet_${i}`} onClick={() => { playClick(); setPetSelectSlot(i); }} className={petItem ? `pet-aura-${petItem.stars||1}` : ""} style={{ flex: 1, height: "80px", background: "var(--bg-secondary)", border: isSelected ? "2px solid #22c55e" : petData ? `1px solid ${RARITY[petData.rarity]?.color}` : "1px dashed #334155", borderRadius: "8px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "pointer", position: "relative" }}>
                           {petItem && <span style={{position:"absolute", top:"4px", right:"4px", fontSize:"10px", color:"#eab308", fontWeight:"bold"}}>⭐{petItem.stars||1}</span>}
                           <span style={{ fontSize: "28px" }}>{petData ? petData.img : "🐾"}</span>
                           {petData && <span style={{ fontSize: "8px", color: "#a1a1aa", marginTop: "4px" }}>{petData.desc}</span>}
@@ -104,7 +105,7 @@ export function RosterView({
                         const pData = PETS_DB[invPet.itemId]; if (!pData) return null;
                         const isEq = player.pets.active.includes(invPet.instanceId);
                         return (
-                          <div key={invPet.instanceId} className={`pet-aura-${invPet.stars||1}`} style={{ background: "#18181b", border: `1px solid ${RARITY[pData.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1, position: "relative", marginBottom: "10px" }}>
+                          <div key={invPet.instanceId} className={`pet-aura-${invPet.stars||1}`} style={{ background: "var(--bg-secondary)", border: `1px solid ${RARITY[pData.rarity]?.color}`, padding: "8px", borderRadius: "8px", textAlign: "center", cursor: isEq ? "not-allowed" : "pointer", opacity: isEq ? 0.3 : 1, position: "relative", marginBottom: "10px" }}>
                             <div onClick={() => { if (!isEq) { playClick(); setPlayer(p => { let n = [...p.pets.active]; n[petSelectSlot] = invPet.instanceId; return {...p, pets: {...p.pets, active: n}}; }); setPetSelectSlot(null); } }}>
                               <div style={{ fontSize: "24px" }}>{pData.img}</div><div style={{ fontSize: "8px", color: "#fff" }}>{pData.name}</div>
                               <div style={{ fontSize: "10px", color: "#eab308", fontWeight: "bold" }}>⭐{invPet.stars||1}</div>

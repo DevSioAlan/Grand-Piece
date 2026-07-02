@@ -24,7 +24,7 @@ export function ProfileModal({
             {profileTab === "stats" && (
               <div className="fade-in">
                 <div style={{ display: "flex", alignItems: "center", gap: "15px", marginBottom: "20px" }}>
-                  <div className={`frame-${player.profile.frame}`} style={{ fontSize: "60px", background: "#18181b", padding: "10px", borderRadius: "15px" }}>{player.profile.avatar}</div>
+                  <div className={`frame-${player.profile.frame}`} style={{ fontSize: "60px", background: "var(--bg-secondary)", padding: "10px", borderRadius: "15px" }}>{player.profile.avatar}</div>
                   <div>
                     <div style={{ fontSize: "24px", fontWeight: "900", color: "#fff" }}>{player.profile.username} {player.profile.flag}</div>
                     <div className="rainbow-text" style={{ fontSize: "14px" }}>{player.profile.titleEquipped}</div>
@@ -32,13 +32,13 @@ export function ProfileModal({
                   </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
-                  <div style={{ background: "#18181b", padding: "10px", borderRadius: "8px", border: "1px solid #27272a" }}>
-                    <span style={{ fontSize: "10px", color: "#9ca3af", display: "block" }}>PUISSANCE</span>
-                    <span className={getGrade(getDmg()).isRainbow ? "rainbow-text" : ""} style={{ fontSize: "18px", fontWeight: "bold", color: getGrade(getDmg()).color }}>{Format.num(getDmg())}</span>
+                  <div className="premium-shadow" style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid #3b82f6", textAlign: "center" }}>
+                    <span style={{ fontSize: "10px", color: "#9ca3af", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>⚔️ PUISSANCE</span>
+                    <span className={getGrade(getDmg()).isRainbow ? "rainbow-text" : ""} style={{ fontSize: "22px", fontWeight: "900", color: getGrade(getDmg()).color, textShadow: `0 0 10px ${getGrade(getDmg()).color}` }}>{Format.num(getDmg())}</span>
                   </div>
-                  <div style={{ background: "#18181b", padding: "10px", borderRadius: "8px", border: "1px solid #27272a" }}>
-                    <span style={{ fontSize: "10px", color: "#9ca3af", display: "block" }}>PRIME</span>
-                    <span style={{ fontSize: "18px", fontWeight: "bold", color: "#ef4444" }}>💀 {Format.num(player.bounty)}</span>
+                  <div className="premium-shadow" style={{ background: "var(--bg-secondary)", padding: "10px", borderRadius: "8px", border: "1px solid #ef4444", textAlign: "center" }}>
+                    <span style={{ fontSize: "10px", color: "#9ca3af", display: "block", textTransform: "uppercase", fontWeight: "bold" }}>💀 PRIME</span>
+                    <span style={{ fontSize: "22px", fontWeight: "900", color: "#ef4444", textShadow: "0 0 10px #ef4444" }}>{Format.num(player.bounty)}</span>
                   </div>
                 </div>
               </div>
@@ -48,12 +48,12 @@ export function ProfileModal({
               <div className="fade-in" style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
                 <div>
                   <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Nom d'Équipage</span>
-                  <input type="text" value={player.profile.username} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, username: e.target.value}}))} style={{ width: "100%", background: "#09090b", border: "1px solid #27272a", color: "#fff", padding: "10px", borderRadius: "8px", marginTop: "5px" }} maxLength={15} />
+                  <input type="text" value={player.profile.username} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, username: e.target.value}}))} style={{ width: "100%", background: "var(--bg-primary)", border: "1px solid var(--border-color)", color: "#fff", padding: "10px", borderRadius: "8px", marginTop: "5px" }} maxLength={15} />
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
                   <div>
                     <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Titre Actif</span>
-                    <select value={player.profile.titleEquipped} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, titleEquipped: e.target.value}}))} style={{ width: "100%", background: "#09090b", color: "#fff", border: "1px solid #27272a", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
+                    <select value={player.profile.titleEquipped} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, titleEquipped: e.target.value}}))} style={{ width: "100%", background: "var(--bg-primary)", color: "#fff", border: "1px solid var(--border-color)", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
 
                       {player.profile.titles.map(t => <option key={t} value={t}>{t} - {TITLES_BUFFS[t]?.desc || "Buff"}</option>)}
 
@@ -61,7 +61,7 @@ export function ProfileModal({
                   </div>
                   <div>
                     <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold" }}>Cadre (Frame)</span>
-                    <select value={player.profile.frame} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, frame: e.target.value}}))} style={{ width: "100%", background: "#09090b", color: "#fff", border: "1px solid #27272a", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
+                    <select value={player.profile.frame} onChange={(e) => setPlayer(p => ({...p, profile: {...p.profile, frame: e.target.value}}))} style={{ width: "100%", background: "var(--bg-primary)", color: "#fff", border: "1px solid var(--border-color)", padding: "10px", borderRadius: "8px", marginTop: "5px", fontSize: "12px" }}>
                       <option value="default">Défaut</option><option value="gold">Or</option><option value="neon">Néon</option><option value="flame">Flammes</option>
                     </select>
                   </div>
@@ -70,7 +70,7 @@ export function ProfileModal({
                   <span style={{ fontSize: "12px", color: "#38bdf8", fontWeight: "bold", display: "block", marginBottom: "5px" }}>Avatar</span>
                   <div style={{ display: "flex", gap: "5px", flexWrap: "wrap" }}>
                     {["🏴‍☠️", "💀", "🦊", "🐯", "🤖", "⚔️", "⚓", "👑", "🐉", "🤡"].map(av => (
-                      <div key={av} onClick={() => setPlayer(p => ({...p, profile: {...p.profile, avatar: av}}))} style={{ fontSize: "24px", background: player.profile.avatar === av ? "#3b82f6" : "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #27272a", cursor: "pointer" }}>{av}</div>
+                      <div key={av} onClick={() => setPlayer(p => ({...p, profile: {...p.profile, avatar: av}}))} style={{ fontSize: "24px", background: player.profile.avatar === av ? "#3b82f6" : "var(--bg-secondary)", padding: "8px", borderRadius: "8px", border: "1px solid var(--border-color)", cursor: "pointer" }}>{av}</div>
                     ))}
                   </div>
                 </div>

@@ -26,13 +26,13 @@ export const ITEMS_DB = {
 };
 
 export const SHIPS = {
-  "sh_barque": { name: "Chaloupe", img: "🛶", cost: 0, clickDelay: 350, extraBeli: 1 },
-  "sh_merry": { name: "Vogue Merry", img: "🐑", cost: 100000, clickDelay: 250, extraBeli: 1.5 },
-  "sh_sunny": { name: "Thousand Sunny", img: "🦁", cost: 2000000, clickDelay: 120, extraBeli: 3.0 },
-  "sh_mobydick": { name: "Moby Dick", img: "🐋", cost: 5000000, clickDelay: 100, extraBeli: 4.0, desc: "+30% PV Max" },
-  "sh_redforce": { name: "Red Force", img: "🐉", cost: 10000000, clickDelay: 80, extraBeli: 5.0, desc: "+15% Chance de Crit" },
-  "sh_orojackson": { name: "Oro Jackson", img: "🔱", cost: 50000000, clickDelay: 50, extraBeli: 8.0, desc: "+50% Beli et Découvertes" },
-  "sh_polartang": { name: "Polar Tang", img: "🟡", cost: 25000000, clickDelay: 70, extraBeli: 6.0, desc: "Soin sur Esquive Parfaite" }
+  "sh_barque": { name: "Chaloupe", img: "🛶", cost: 0, clickDelay: 350, extraBeli: 1, desc: "Beli x1.0, CD 350ms" },
+  "sh_merry": { name: "Vogue Merry", img: "🐑", cost: 1000000, clickDelay: 250, extraBeli: 1.5, desc: "Beli x1.5, CD 250ms" },
+  "sh_sunny": { name: "Thousand Sunny", img: "🦁", cost: 20000000, clickDelay: 120, extraBeli: 3.0, desc: "Beli x3.0, CD 120ms" },
+  "sh_mobydick": { name: "Moby Dick", img: "🐋", cost: 50000000, clickDelay: 100, extraBeli: 4.0, desc: "Beli x4.0, +30% PV Max" },
+  "sh_redforce": { name: "Red Force", img: "🐉", cost: 100000000, clickDelay: 80, extraBeli: 5.0, desc: "Beli x5.0, +15% Chance de Crit" },
+  "sh_orojackson": { name: "Oro Jackson", img: "🔱", cost: 500000000, clickDelay: 50, extraBeli: 8.0, desc: "Beli x8.0, +50% Découvertes" },
+  "sh_polartang": { name: "Polar Tang", img: "🟡", cost: 250000000, clickDelay: 70, extraBeli: 6.0, desc: "Beli x6.0, Soin sur Esquive" }
 };
 
 export const RELICS = {

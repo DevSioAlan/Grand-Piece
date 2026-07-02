@@ -31,7 +31,7 @@ export function SummonView({
                     .sort((a,b) => (RARITY[b.rarity]?.val||0) - (RARITY[a.rarity]?.val||0)).map((item, i) => {
                     let animClass = item.rarity === "EX" ? "ex-shatter" : item.rarity === "Divine" || item.rarity === "Mythic" ? "mythic-glow" : item.rarity === "Legendary" ? "legendary-shine" : item.rarity === "Epic" ? "epic-pulse" : "common-shine";
                     return (
-                      <div key={i} className={animClass} style={{ flex: "0 0 auto", width: "70px", background: "#18181b", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
+                      <div key={i} className={animClass} style={{ flex: "0 0 auto", width: "70px", background: "var(--bg-secondary)", borderRadius: "8px", padding: "8px", textAlign: "center" }}>
                         <div style={{ fontSize: "24px", marginBottom: "5px" }}>{item.img}</div>
                         <div style={{ fontSize: "8px", color: RARITY[item.rarity]?.color || "#fff", fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.name}</div>
                       </div>
@@ -40,13 +40,17 @@ export function SummonView({
                 </div>
               </div>
 
+              <div style={{ fontSize: "10px", color: "#a1a1aa", marginBottom: "15px", background: "var(--bg-secondary)", padding: "5px", borderRadius: "4px", border: "1px solid #334155" }}>
+                Taux de Drop: EX 0.5% | Divine 2% | Mythic 8% | Leg 20% | Epic 40% | Rare 30%
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "15px" }}>
-                <div style={{ background: "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #27272a", textAlign: "left" }}>
+                <div style={{ background: "var(--bg-secondary)", padding: "8px", borderRadius: "8px", border: "1px solid var(--border-color)", textAlign: "left" }}>
                   <div style={{ fontSize: "9px", color: "#eab308", fontWeight: "bold" }}>PITY LÉGENDAIRE</div>
                   <div className="pity-bar"><div className="pity-fill" style={{ background: "#eab308", width: `${(player.pity.legendary / 100) * 100}%` }}></div></div>
                   <div style={{ fontSize: "9px", color: "#9ca3af", marginTop: "2px" }}>{player.pity.legendary % 100} / 100</div>
                 </div>
-                <div style={{ background: "#18181b", padding: "8px", borderRadius: "8px", border: "1px solid #27272a", textAlign: "left" }}>
+                <div style={{ background: "var(--bg-secondary)", padding: "8px", borderRadius: "8px", border: "1px solid var(--border-color)", textAlign: "left" }}>
                   <div style={{ fontSize: "9px", color: "#f472b6", fontWeight: "bold" }}>PITY EX (GARANTI)</div>
                   <div className="pity-bar"><div className="pity-fill" style={{ background: "#f472b6", width: `${(player.pity.ex / 800) * 100}%` }}></div></div>
                   <div style={{ fontSize: "9px", color: "#9ca3af", marginTop: "2px" }}>{player.pity.ex} / 800</div>
@@ -63,13 +67,13 @@ export function SummonView({
               </div>
 
               {summonResult && !autoSummonConfig.active && (
-                <div className="fade-in" style={{ marginTop: "20px", background: "#09090b", padding: "15px", borderRadius: "12px", border: "1px solid #27272a" }}>
+                <div className="fade-in" style={{ marginTop: "20px", background: "var(--bg-primary)", padding: "15px", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
                     {summonResult.map((item, i) => {
                       let animClass = item.rarity === "EX" ? "ex-shatter" : item.rarity === "Divine" || item.rarity === "Mythic" ? "mythic-glow" : item.rarity === "Legendary" ? "legendary-shine" : item.rarity === "Epic" ? "epic-pulse" : "common-shine";
                       let scale = item.rarity === "EX" ? 1.3 : item.rarity === "Divine" ? 1.1 : 1.0;
                       return (
-                        <div key={i} className={`fade-in ${animClass}`} style={{ animationDelay: `${i * 0.05}s`, background: "#18181b", borderRadius: "8px", padding: "8px", textAlign: "center", width: "60px", transform: `scale(${scale})` }}>
+                        <div key={i} className={`fade-in ${animClass}`} style={{ animationDelay: `${i * 0.05}s`, background: "var(--bg-secondary)", borderRadius: "8px", padding: "8px", textAlign: "center", width: "60px", transform: `scale(${scale})` }}>
                           <div style={{ fontSize: "24px" }}>{item.img}</div>
                         </div>
                       );
