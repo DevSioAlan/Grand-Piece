@@ -1,8 +1,16 @@
+@keyframes gradientMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 :root, .theme-pirate {
   /* Default Pirate (Sombre) Theme */
-  --bg-primary: #050505;
-  --bg-secondary: #18181b;
-  --border-color: #27272a;
+  --bg-primary: linear-gradient(-45deg, #450a0a, #050505, #7f1d1d, #050505);
+  --bg-secondary: rgba(24, 24, 27, 0.95);
+  --panel-bg: rgba(69, 10, 10, 0.85);
+  --border-color: #7f1d1d;
+  --glow-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
   --text-primary: #f8fafc;
   --text-secondary: #9ca3af;
   --accent: #ef4444;
@@ -17,7 +25,6 @@
   letter-spacing: 0.18px;
   color-scheme: dark;
   color: var(--text-primary);
-  background: var(--bg-primary);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -29,22 +36,26 @@
 }
 
 .theme-marine {
-  --bg-primary: #f0f9ff;
-  --bg-secondary: #ffffff;
-  --border-color: #bae6fd;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
+  --bg-primary: linear-gradient(-45deg, #0f172a, #0c4a6e, #0284c7, #0f172a);
+  --bg-secondary: rgba(15, 23, 42, 0.95);
+  --panel-bg: rgba(12, 74, 110, 0.85);
+  --border-color: #0ea5e9;
+  --glow-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+  --text-primary: #f8fafc;
+  --text-secondary: #bae6fd;
   --accent: #3b82f6;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 .theme-night {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --border-color: #334155;
+  --bg-primary: linear-gradient(-45deg, #1e1b4b, #000000, #4c1d95, #000000);
+  --bg-secondary: rgba(0, 0, 0, 0.95);
+  --panel-bg: rgba(46, 16, 101, 0.85);
+  --border-color: #8b5cf6;
+  --glow-shadow: 0 0 10px rgba(139, 92, 246, 0.5);
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --accent: #8b5cf6;
+  --accent: #a855f7;
   color-scheme: dark;
 }
 
