@@ -1,9 +1,12 @@
+import { useRef } from 'react';
 import { RARITY, REBIRTH_SHOP } from "../data/constants";
 import { ITEMS_DB } from "../data/items";
 import { PETS_DB } from "../data/pets";
 import { CREW_MEMBERS } from "../data/combat";
 
 export function useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSummon, setSummonResult, playClick, addToast) {
+  const cinematicTimeoutRef = useRef(null);
+
   const handleAutoSell = (pullsArray) => {
     let kept = []; let soldValue = 0;
     pullsArray.forEach(p => {
@@ -72,10 +75,20 @@ export function useGacha(player, setPlayer, setAutoSummonConfig, setCinematicSum
       return newP;
     });
 
+    if (cinematicTimeoutRef.current) {
+      clearTimeout(cinematicTimeoutRef.current);
+      cinematicTimeoutRef.current = null;
+    }
+
     if (!player.settings.skipLowAnim || maxRarityVal >= RARITY.Mythic.val) {
+      setSummonResult(null);
       setCinematicSummon({ active: true, item: bestItemForCine });
-      setTimeout(() => { setCinematicSummon({ active: false, item: null }); setSummonResult(pulls); }, hasEX ? 5000 : 3000);
+      cinematicTimeoutRef.current = setTimeout(() => {
+        setCinematicSummon({ active: false, item: null });
+        setSummonResult(pulls);
+      }, hasEX ? 5000 : 3000);
     } else {
+      setCinematicSummon({ active: false, item: null });
       setSummonResult(pulls);
     }
   };
