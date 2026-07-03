@@ -78,8 +78,10 @@ export default function App() {
   // --- INIT & TOASTS ---
   useEffect(() => {
     // Safe-area fix to avoid CSS crashing on specific devices
-    document.documentElement.style.setProperty('--safe-area-top', 'env(safe-area-inset-top, 20px)');
-    document.documentElement.style.setProperty('--safe-area-bottom', 'env(safe-area-inset-bottom, 20px)');
+    if (document.documentElement) {
+      document.documentElement.style.setProperty('--safe-area-top', 'env(safe-area-inset-top, 20px)');
+      document.documentElement.style.setProperty('--safe-area-bottom', 'env(safe-area-inset-bottom, 20px)');
+    }
   }, []);
 
   const addToast = (msg, color="#3b82f6") => {
@@ -705,7 +707,7 @@ export default function App() {
   }
 
   return (
-    <div className={`theme-${player.settings?.theme || 'pirate'}`} style={{ background: gameMode === "tower" ? "#1e1b4b" : gameMode === "pvp" ? "#450a0a" : "var(--bg-primary)", height: "100dvh", width: "100vw", color: "var(--text-primary)", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", transition: "background 0.5s" }}>
+    <div className={`theme-${player.settings?.theme || 'pirate'}`} style={{ background: gameMode === "tower" ? "#1e1b4b" : gameMode === "pvp" ? "#450a0a" : "var(--bg-primary)", backgroundSize: "400% 400%", animation: "gradientMove 15s ease infinite", height: "100dvh", width: "100vw", color: "var(--text-primary)", fontFamily: "system-ui, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden", transition: "background 0.5s" }}>
       {levelUpFlash && <div style={{ position: "absolute", inset: 0, background: "rgba(255, 255, 255, 0.4)", zIndex: 999, pointerEvents: "none", animation: "flashAnim 0.5s ease-out" }} />}
       
       {showUltAnim.active && (
@@ -788,7 +790,7 @@ export default function App() {
         .rbx-btn-purple { background: linear-gradient(180deg, #a855f7, #7e22ce); border-color: #581c87; color: #fff; }
         .rbx-btn-orange { background: linear-gradient(180deg, #f97316, #c2410c); border-color: #9a3412; color: #fff; }
 
-        .rbx-panel { background: rgba(24, 24, 27, 0.95); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 10px 20px rgba(0,0,0,0.5); }
+        .rbx-panel { background: var(--panel-bg, rgba(24, 24, 27, 0.95)); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), var(--glow-shadow, 0 10px 20px rgba(0,0,0,0.5)); backdrop-filter: blur(8px); }
         .ios-tap { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
         
