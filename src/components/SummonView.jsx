@@ -69,12 +69,43 @@ export function SummonView({
               {summonResult && !autoSummonConfig.active && (
                 <div className="fade-in" style={{ marginTop: "20px", background: "var(--bg-primary)", padding: "15px", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", justifyContent: "center" }}>
-                    {summonResult.map((item, i) => {
-                      let animClass = item.rarity === "EX" ? "ex-shatter" : item.rarity === "Divine" || item.rarity === "Mythic" ? "mythic-glow" : item.rarity === "Legendary" ? "legendary-shine" : item.rarity === "Epic" ? "epic-pulse" : "common-shine";
-                      let scale = item.rarity === "EX" ? 1.3 : item.rarity === "Divine" ? 1.1 : 1.0;
+                    {summonResult.map((pull, i) => {
+                      const dbItem = pull.type === "item" ? ITEMS_DB[pull.itemId] : pull.type === "pet" ? PETS_DB[pull.id] : CREW_MEMBERS.find(c => c.id === pull.id);
+                      if (!dbItem) return null;
+
+                      let animClass = dbItem.rarity === "EX" ? "ex-shatter" : dbItem.rarity === "Divine" || dbItem.rarity === "Mythic" ? "mythic-glow" : dbItem.rarity === "Legendary" ? "legendary-shine" : dbItem.rarity === "Epic" ? "epic-pulse" : "common-shine";
+                      let scale = dbItem.rarity === "EX" ? 1.3 : dbItem.rarity === "Divine" ? 1.1 : 1.0;
+
+                      const rarityColor = RARITY[dbItem.rarity]?.color || "#ffffff";
+
                       return (
-                        <div key={i} className={`fade-in ${animClass}`} style={{ animationDelay: `${i * 0.05}s`, background: "var(--bg-secondary)", borderRadius: "8px", padding: "8px", textAlign: "center", width: "60px", transform: `scale(${scale})` }}>
-                          <div style={{ fontSize: "24px" }}>{item.img}</div>
+                        <div key={i} className={`fade-in foil-card ${animClass}`} style={{
+                            animationDelay: `${i * 0.05}s`,
+                            background: "var(--bg-secondary)",
+                            borderRadius: "8px",
+                            padding: "8px",
+                            textAlign: "center",
+                            width: "70px",
+                            transform: `scale(${scale})`,
+                            position: "relative",
+                            overflow: "hidden"
+                        }}>
+                          <div style={{ position: "relative", zIndex: 2 }}>
+                            {dbItem.img ? (
+                              <div style={{ fontSize: "24px", marginBottom: "5px" }}>{dbItem.img}</div>
+                            ) : (
+                              <div style={{
+                                width: "40px",
+                                height: "40px",
+                                margin: "0 auto 5px",
+                                borderRadius: "4px",
+                                background: `linear-gradient(45deg, var(--bg-secondary), ${rarityColor})`
+                              }}></div>
+                            )}
+                            <div style={{ fontSize: "8px", color: rarityColor, fontWeight: "bold", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {dbItem.name}
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
